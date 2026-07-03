@@ -1,0 +1,224 @@
+/* ── Product page: full-width header bar ── */
+.prod-header {
+    margin-bottom: 12px;
+}
+
+.prod-header .prod-title {
+    margin-bottom: 12px;
+}
+
+.prod-header-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.prod-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.prod-action-link {
+    background: none;
+    border: none;
+    padding: 0;
+    font-size: 14px;
+    color: var(--clr-dark);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+}
+
+.prod-action-link:hover {
+    color: var(--clr-primary);
+}
+
+.prod-action-sep {
+    color: var(--clr-border);
+}
+
+.prod-header-brand-rating {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font-size: 13px;
+    color: var(--clr-body);
+}
+
+.prod-header-brand-rating a {
+    color: var(--clr-primary);
+    font-weight: 600;
+}
+
+.prod-rating-inline i {
+    color: var(--clr-primary);
+    font-size: 12px;
+    margin-left: 2px;
+}
+
+.prod-header-divider {
+    border: none;
+    border-top: 1px solid var(--clr-border);
+    margin: 0 0 24px;
+}
+
+/* ── Feature bullets (from short description) ── */
+.feature-bullets {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 20px;
+    columns: 2;
+    column-gap: 32px;
+}
+
+.feature-bullets li {
+    font-size: 14px;
+    color: var(--clr-body);
+    line-height: 1.7;
+    break-inside: avoid;
+    position: relative;
+    padding-right: 14px;
+}
+
+.feature-bullets li::after {
+    content: '•';
+    color: var(--clr-primary);
+    margin-left: 6px;
+}
+
+/* ── Image gallery: main image + vertical thumb rail ── */
+.gallery-wrap {
+    display: flex;
+    flex-direction: row-reverse;
+    gap: 12px;
+    align-items: flex-start;
+}
+
+.gallery-main {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+}
+
+.gallery-badge {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    z-index: 2;
+}
+
+.gallery-thumbs {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 64px;
+    flex-shrink: 0;
+}
+
+.gallery-thumbs .thumb-btn {
+    width: 64px;
+    height: 64px;
+}
+
+/* ── Footer meta block ── */
+.prod-footer-meta {
+    display: flex;
+    justify-content: space-between;
+    gap: 24px;
+    padding-top: 20px;
+    margin-top: 20px;
+    border-top: 1px solid var(--clr-border);
+    font-size: 13px;
+}
+
+.prod-footer-label {
+    font-weight: 700;
+    color: var(--clr-dark);
+}
+
+.prod-footer-value {
+    color: var(--clr-body);
+}
+
+.prod-footer-value a {
+    color: var(--clr-body);
+    text-decoration: underline;
+}
+
+.prod-share {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-top: 16px;
+    color: var(--clr-dark);
+    font-size: 16px;
+}
+
+.prod-share span {
+    font-size: 13px;
+    font-weight: 600;
+    margin-left: 4px;
+}
+/* ── MINIMAL GRID SYSTEM (replaces missing Bootstrap) ── */
+    .row {
+        display: flex;
+        flex-wrap: wrap;
+        margin-left: -12px;
+        margin-right: -12px;
+    }
+    .row > [class*="col-"] {
+        padding-left: 12px;
+        padding-right: 12px;
+        width: 100%;
+    }
+    .g-5 {
+        margin-left: -20px;
+        margin-right: -20px;
+    }
+    .g-5 > [class*="col-"] {
+        padding-left: 20px;
+        padding-right: 20px;
+        margin-bottom: 20px;
+    }
+    .align-items-start { align-items: flex-start; }
+    .align-items-end { align-items: flex-end; }
+    .align-items-center { align-items: center; }
+    .justify-content-between { justify-content: space-between; }
+
+    @media (min-width: 992px) {
+        .col-lg-5 { width: 41.6666%; }
+        .col-lg-7 { width: 58.3333%; }
+        .col-lg-4 { width: 33.3333%; }
+        .col-lg-8 { width: 66.6666%; }
+        .col-lg-6 { width: 50%; }
+    }
+
+    /* ── UTILITY CLASSES (Bootstrap-style, used sparingly in this template) ── */
+    .d-flex { display: flex; }
+    .d-none { display: none; }
+    .gap-2 { gap: 8px; }
+    .mb-3 { margin-bottom: 16px; }
+    .mb-4 { margin-bottom: 24px; }
+    .mb-5 { margin-bottom: 40px; }
+    .pb-2 { padding-bottom: 8px; }
+    .border-bottom { border-bottom: 1px solid var(--clr-border); }
+/* ── Responsive: stack gallery back to full width, thumbs horizontal ── */
+@media (max-width: 991px) {
+    .gallery-wrap {
+        flex-direction: column;
+    }
+
+    .gallery-thumbs {
+        flex-direction: row;
+        width: 100%;
+        overflow-x: auto;
+    }
+
+    .feature-bullets {
+        columns: 1;
+    }
+}

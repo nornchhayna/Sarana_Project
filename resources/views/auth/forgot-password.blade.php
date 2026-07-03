@@ -1,0 +1,420 @@
+{{-- resources/views/auth/forgot-password.blade.php --}}
+<style>
+    <style>
+    /* public/css/auth.css — include in your layouts/app.blade.php */
+
+    *,
+    *::before,
+    *::after {
+        box-sizing: border-box;
+    }
+
+    .auth-container {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #f0f9ff 0%, #f0fdf4 100%);
+        padding: 24px 16px;
+    }
+
+    .auth-card {
+        width: 100%;
+        max-width: 440px;
+        background: #FFFFFF;
+        border-radius: 16px;
+        box-shadow: 0 4px 24px rgba(0, 0, 0, .08);
+        padding: 40px 40px 32px;
+    }
+
+    /* Header */
+    .auth-header {
+        text-align: center;
+        margin-bottom: 28px;
+    }
+
+    .auth-header h1 {
+        font-size: 26px;
+        font-weight: 700;
+        color: #111827;
+        margin: 0 0 6px;
+    }
+
+    .auth-header p {
+        color: #6b7280;
+        font-size: 14px;
+        margin: 0;
+    }
+
+    .otp-icon {
+        font-size: 48px;
+        margin-bottom: 12px;
+    }
+
+    /* Alerts */
+    .alert {
+        padding: 12px 16px;
+        border-radius: 8px;
+        font-size: 14px;
+        margin-bottom: 20px;
+    }
+
+    .alert-info {
+        background: #eff6ff;
+        color: #1e40af;
+        border: 1px solid #bfdbfe;
+    }
+
+    .alert-success {
+        background: #f0fdf4;
+        color: #166534;
+        border: 1px solid #bbf7d0;
+    }
+
+    .alert-error {
+        background: #fef2f2;
+        color: #991b1b;
+        border: 1px solid #fecaca;
+    }
+
+    /* Form */
+    .form-group {
+        margin-bottom: 18px;
+    }
+
+    .form-group label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 6px;
+    }
+
+    .form-group input[type="text"],
+    .form-group input[type="email"],
+    .form-group input[type="password"],
+    .form-group input[type="tel"] {
+        width: 100%;
+        padding: 10px 14px;
+        border: 1.5px solid #d1d5db;
+        border-radius: 8px;
+        font-size: 15px;
+        color: #111827;
+        transition: border-color .2s, box-shadow .2s;
+        outline: none;
+        background: #FFFFFF;
+    }
+
+    .form-group input:focus {
+        border-color: #007FFF;
+        box-shadow: 0 0 0 3px rgba(0, 127, 255, 0.15);
+    }
+
+    .has-error input {
+        border-color: #ef4444;
+    }
+
+    .error-msg {
+        display: block;
+        color: #ef4444;
+        font-size: 12px;
+        margin-top: 4px;
+    }
+
+    .hint {
+        color: #9ca3af;
+        font-size: 12px;
+        display: block;
+        margin-top: 4px;
+    }
+
+    /* OTP input */
+    .otp-input {
+        text-align: center !important;
+        letter-spacing: 8px !important;
+        font-size: 28px !important;
+        font-weight: 700 !important;
+        color: #007FFF !important;
+        padding: 14px !important;
+    }
+
+    /* Phone input */
+    .phone-input-wrap {
+        display: flex;
+        align-items: center;
+        gap: 0;
+    }
+
+    .phone-prefix {
+        background: #f3f4f6;
+        border: 1.5px solid #d1d5db;
+        border-right: none;
+        border-radius: 8px 0 0 8px;
+        padding: 10px 12px;
+        font-size: 14px;
+        color: #374151;
+        white-space: nowrap;
+    }
+
+    .phone-input-wrap input {
+        border-radius: 0 8px 8px 0 !important;
+        flex: 1;
+    }
+
+    /* Password wrap */
+    .password-wrap {
+        position: relative;
+    }
+
+    .password-wrap input {
+        padding-right: 44px !important;
+    }
+
+    .toggle-pw {
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-size: 16px;
+        padding: 0;
+        color: #6b7280;
+    }
+
+    /* Inline form-group (remember me) */
+    .form-group-inline label {
+        font-weight: normal;
+        cursor: pointer;
+    }
+
+    .checkbox-label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        color: #374151;
+    }
+
+    .checkbox-label input[type="checkbox"] {
+        width: 16px;
+        height: 16px;
+        accent-color: #007FFF;
+    }
+
+    /* Forgot link */
+    .forgot-link {
+        margin-left: auto;
+        font-size: 13px;
+        color: #007FFF;
+        text-decoration: none;
+        font-weight: normal;
+    }
+
+    .forgot-link:hover {
+        text-decoration: underline;
+    }
+
+    /* Badges */
+    .required {
+        color: #ef4444;
+    }
+
+    .badge-optional {
+        font-size: 11px;
+        font-weight: 500;
+        padding: 2px 7px;
+        background: #f3f4f6;
+        color: #6b7280;
+        border-radius: 99px;
+    }
+
+    /* Buttons */
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 11px 20px;
+        border-radius: 8px;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        border: none;
+        transition: all .2s;
+        text-decoration: none;
+    }
+
+    .btn-primary {
+        background: #007FFF;
+        color: #FFFFFF;
+    }
+
+    .btn-primary:hover {
+        background: #0066cc;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0, 127, 255, 0.3);
+    }
+
+    .btn-block {
+        width: 100%;
+    }
+
+    .btn-link {
+        background: none;
+        border: none;
+        color: #007FFF;
+        font-size: 14px;
+        cursor: pointer;
+        padding: 0;
+        font-weight: 600;
+    }
+
+    .btn-link:hover {
+        text-decoration: underline;
+    }
+
+    /* Resend section */
+    .resend-section {
+        text-align: center;
+        margin-top: 20px;
+    }
+
+    .resend-section p {
+        font-size: 13px;
+        color: #6b7280;
+        margin-bottom: 4px;
+    }
+
+    /* Footer */
+    .auth-footer {
+        text-align: center;
+        margin-top: 24px;
+        padding-top: 20px;
+        border-top: 1px solid #f3f4f6;
+    }
+
+    .auth-footer p,
+    .auth-footer a {
+        font-size: 14px;
+        color: #6b7280;
+        text-decoration: none;
+    }
+
+    .auth-footer a {
+        color: #007FFF;
+        font-weight: 600;
+    }
+
+    .auth-footer a:hover {
+        text-decoration: underline;
+    }
+
+    /* Password strength */
+    .pw-strength-wrap {
+        margin-bottom: 16px;
+    }
+
+    .pw-strength-bar {
+        background: #e5e7eb;
+        border-radius: 99px;
+        height: 6px;
+        overflow: hidden;
+        margin-bottom: 4px;
+    }
+
+    .pw-strength-fill {
+        height: 100%;
+        border-radius: 99px;
+        transition: width .3s, background .3s;
+    }
+
+    /* ── Register Tabs ─────────────────────────────────────────── */
+    .register-tabs {
+        display: flex;
+        gap: 0;
+        margin-bottom: 24px;
+        border-radius: 10px;
+        overflow: hidden;
+        border: 1.5px solid #e5e7eb;
+    }
+
+    .reg-tab {
+        flex: 1;
+        padding: 11px 16px;
+        background: #f9fafb;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+        color: #6b7280;
+        transition: background .2s, color .2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+    }
+
+    .reg-tab:first-child {
+        border-right: 1.5px solid #e5e7eb;
+    }
+
+    .reg-tab.active {
+        background: #007FFF;
+        color: #FFFFFF;
+    }
+
+    .reg-tab:not(.active):hover {
+        background: #f3f4f6;
+        color: #374151;
+    }
+
+    .tab-panel {
+        animation: fadeIn .2s ease;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(4px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
+</style>
+<div class="auth-container">
+    <div class="auth-card">
+        <div class="auth-header">
+            <div class="otp-icon">🔐</div>
+            <h1>Forgot Password?</h1>
+            <p>Enter your email and we'll send you a reset code.</p>
+        </div>
+
+        <form method="POST" action="{{ route('auth.password.forgot') }}">
+            @csrf
+
+            <div class="form-group @error('email') has-error @enderror">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" name="email" value="{{ old('email') }}" placeholder="you@example.com"
+                    autocomplete="email" autofocus required>
+                @error('email')
+                    <span class="error-msg">{{ $message }}</span>
+                @enderror
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block">
+                Send Reset Code →
+            </button>
+        </form>
+
+        <div class="auth-footer">
+            <a href="{{ route('auth.login') }}">← Back to Login</a>
+        </div>
+    </div>
+</div>
