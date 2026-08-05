@@ -54,5 +54,6 @@ return [
     'customer_services'=> 'Customer Services',
     'contact_info'=> 'Contact Information',
     'feature_product'=> 'Featured Product',
-    'locate'=> 'Sensok, Phnom Penh, Cambodia'
+    'locate'=> 'Sensok, Phnom Penh, Cambodia',
+    'related_products'=> 'Related Products'
 ];

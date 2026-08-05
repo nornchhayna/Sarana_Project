@@ -163,7 +163,24 @@
     <div class="md:hidden space-y-4 mb-6">
         @forelse($order->items as $item)
             @php
-                $imgPath = $item->product->thumbnail ?? ($item->product->images ? json_decode($item->product->images, true)[0] ?? null : null);
+                // Try to get variant image matching the selected color
+                $variantImage = null;
+                if ($item->color_id && $item->product->variantImages) {
+                    $variantImage = $item->product->variantImages
+                        ->where('color_id', $item->color_id)
+                        ->where('is_primary', true)
+                        ->first();
+                    if (!$variantImage) {
+                        $variantImage = $item->product->variantImages
+                            ->where('color_id', $item->color_id)
+                            ->first();
+                    }
+                }
+                
+                // Fallback to product thumbnail or first image
+                $imgPath = $variantImage?->image ?? 
+                           $item->product->thumbnail ?? 
+                           ($item->product->images ? json_decode($item->product->images, true)[0] ?? null : null);
             @endphp
             <div class="bg-white rounded-lg shadow-md p-4">
                 <div class="flex gap-3">
@@ -173,9 +190,9 @@
                          onerror="this.src='{{ asset('images/default-product.png') }}';">
                     <div class="flex-1 min-w-0">
                         <div class="text-sm font-semibold text-gray-800">{{ $item->product?->name ?? $item->product_name ?? 'Unknown Product' }}</div>
-                        @if($item->color_name || $item->storage_capacity)
+                        @if($item->color_name || $item->storage_capacity || $item->phoneStorage?->capacity)
                             <div class="text-xs text-gray-500 mt-0.5">
-                                {{ collect([$item->color_name, $item->storage_capacity])->filter()->implode(' • ') }}
+                                {{ collect([$item->color_name, $item->storage_capacity, $item->phoneStorage?->capacity])->filter()->implode(' • ') }}
                             </div>
                         @endif
                         <div class="text-xs text-gray-500 mt-1">Qty {{ $item->quantity }} × {{ config('app.currency_symbol', '$') }}{{ number_format($item->unit_price, 2) }}</div>
@@ -219,7 +236,24 @@
                 <tbody>
                     @forelse($order->items as $item)
                     @php
-                        $imgPath = $item->product->thumbnail ?? ($item->product->images ? json_decode($item->product->images, true)[0] ?? null : null);
+                        // Try to get variant image matching the selected color
+                        $variantImage = null;
+                        if ($item->color_id && $item->product->variantImages) {
+                            $variantImage = $item->product->variantImages
+                                ->where('color_id', $item->color_id)
+                                ->where('is_primary', true)
+                                ->first();
+                            if (!$variantImage) {
+                                $variantImage = $item->product->variantImages
+                                    ->where('color_id', $item->color_id)
+                                    ->first();
+                            }
+                        }
+                        
+                        // Fallback to product thumbnail or first image
+                        $imgPath = $variantImage?->image ?? 
+                                   $item->product->thumbnail ?? 
+                                   ($item->product->images ? json_decode($item->product->images, true)[0] ?? null : null);
                     @endphp
                     <tr class="border-b hover:bg-gray-50 transition">
                         <td class="px-6 py-4">
@@ -230,9 +264,9 @@
                         </td>
                         <td class="px-6 py-4">
                             <div class="text-sm font-semibold text-gray-800">{{ $item->product?->name ?? $item->product_name ?? 'Unknown Product' }}</div>
-                            @if($item->color_name || $item->storage_capacity)
+                            @if($item->color_name || $item->storage_capacity || $item->phoneStorage?->capacity)
                                 <div class="text-xs text-gray-500 mt-1">
-                                    {{ collect([$item->color_name, $item->storage_capacity])->filter()->implode(' • ') }}
+                                    {{ collect([$item->color_name, $item->storage_capacity, $item->phoneStorage?->capacity])->filter()->implode(' • ') }}
                                 </div>
                             @endif
                         </td>

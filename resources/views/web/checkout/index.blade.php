@@ -112,7 +112,23 @@
                     <div class="summary-item">
                         <div class="summary-item-img-wrap">
                                    @php
-                                            $imgPath = $item->product->thumbnail ?? 
+                                            // Try to get variant image matching the selected color
+                                            $variantImage = null;
+                                            if ($item->color_id && $item->product->variantImages) {
+                                                $variantImage = $item->product->variantImages
+                                                    ->where('color_id', $item->color_id)
+                                                    ->where('is_primary', true)
+                                                    ->first();
+                                                if (!$variantImage) {
+                                                    $variantImage = $item->product->variantImages
+                                                        ->where('color_id', $item->color_id)
+                                                        ->first();
+                                                }
+                                            }
+                                            
+                                            // Fallback to product thumbnail or first image
+                                            $imgPath = $variantImage?->image ?? 
+                                                       $item->product->thumbnail ?? 
                                                        ($item->product->images ? json_decode($item->product->images, true)[0] ?? null : null);
                                         @endphp
 
@@ -125,11 +141,11 @@
                         </div>
                         <div class="summary-item-info">
                             <span class="summary-item-name">{{ $item->product->name }}</span>
-                            @if($item->color || $item->storage)
+                            @if($item->color || $item->phoneStorage)
                                 <span class="summary-item-variant">
                                     {{ $item->color->name ?? '' }}
-                                    @if($item->color && $item->storage) · @endif
-                                    {{ $item->storage->capacity ?? '' }}
+                                    @if($item->color && $item->phoneStorage) · @endif
+                                    {{ $item->phoneStorage->capacity ?? '' }}
                                 </span>
                             @endif
                         </div>

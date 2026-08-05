@@ -105,7 +105,7 @@ class CheckoutController extends Controller
 
     public function index()
     {
-        $cart = Cart::with(['items.product.brand', 'items.color', 'items.storage', 'promotion'])
+        $cart = Cart::with(['items.product.brand', 'items.color', 'items.storage', 'items.product.variantImages', 'promotion'])
             ->where('user_id', auth()->id())
             ->firstOrFail();
 

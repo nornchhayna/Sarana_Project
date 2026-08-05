@@ -46,7 +46,7 @@ class OrderController extends Controller
     public function show(Order $order)
     {
         abort_if($order->user_id !== auth()->id(), 403);
-        $order->load(['items.product', 'payment', 'invoice']);
+        $order->load(['items.product.variantImages', 'items.phoneStorage', 'payment', 'invoice']);
 
         $steps = [
             'pending' => ['label' => 'Order Placed', 'index' => 1],

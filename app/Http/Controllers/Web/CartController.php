@@ -33,9 +33,24 @@ class CartController extends Controller
     public function index(Request $request)
     {
         $cart = $this->resolveCart($request)
-            ->load(['items.product.brand', 'items.color', 'items.storage', 'promotion']);
+            ->load(['items.product.brand', 'items.color', 'items.storage', 'items.product.variantImages', 'promotion']);
 
-        return view('web.cart.index', compact('cart'));
+        // Fetch related products (deals of the day)
+        $related = collect();
+        if ($cart->items->isNotEmpty()) {
+            $categoryIds = $cart->items->pluck('product.category_id')->unique()->toArray();
+            $related = Product::with(['brand', 'stock'])
+                ->withCount(['reviews' => fn ($q) => $q->where('is_approved', true)])
+                ->withAvg(['reviews as avg_rating' => fn ($q) => $q->where('is_approved', true)], 'rating')
+                ->where('is_active', true)
+                ->whereIn('category_id', $categoryIds)
+                ->whereNotIn('id', $cart->items->pluck('product_id'))
+                ->inRandomOrder()
+                ->take(8)
+                ->get();
+        }
+
+        return view('web.cart.index', compact('cart', 'related'));
     }
 
  public function add(Request $request)

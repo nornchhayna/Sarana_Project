@@ -333,7 +333,7 @@
 
         <div class="flex items-center justify-between mb-4 sm:mb-6">
             <h2 class="text-[18px] sm:text-[22px] font-bold text-[#2B3D5D]">
-                Deals of the Day
+               {{__('messages.related_products')}}
             </h2>
 
             <div class="flex items-center gap-2 sm:gap-3">

@@ -235,86 +235,7 @@
     'sectionId' => 'preorder',
     'viewAllRoute' => route('products.index', ['is_pre_order' => 1]),
 ])
-{{-- Trust Bar --}}
-<section class="mt-8">
-    <div class="max-w-[1280px] mx-auto px-4">
-        <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
-            {{-- Free Delivery --}}
-            <div class="flex items-center gap-4 bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
-                <div class="text-3xl">
-                    ✈️
-                </div>
-                <div>
-                    <h4 class="font-bold text-gray-800">
-                        Free Delivery
-                    </h4>
 
-                    <p class="text-sm text-gray-500">
-                        From all orders over $10
-                    </p>
-                </div>
-            </div>
-
-            {{-- Support --}}
-            <div class="flex items-center gap-4 bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
-
-                <div class="text-3xl">
-                    🎧
-                </div>
-
-                <div>
-                    <h4 class="font-bold text-gray-800">
-                        Support 24/7
-                    </h4>
-
-                    <p class="text-sm text-gray-500">
-                        Shop with an expert
-                    </p>
-                </div>
-
-            </div>
-            {{-- Gift --}}
-            <div class="flex items-center gap-4 bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
-
-                <div class="text-3xl">
-                    🎁
-                </div>
-
-                <div>
-                    <h4 class="font-bold text-gray-800">
-                        Gift voucher
-                    </h4>
-
-                    <p class="text-sm text-gray-500">
-                        Refer a friend
-                    </p>
-                </div>
-
-            </div>
-            {{-- Secure Payment --}}
-            <div class="flex items-center gap-4 bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
-
-                <div class="text-3xl">
-                    🛡️
-                </div>
-
-                <div>
-                    <h4 class="font-bold text-gray-800">
-                        Secure payment
-                    </h4>
-
-                    <p class="text-sm text-gray-500">
-                        Protected 100%
-                    </p>
-                </div>
-
-            </div>
-
-        </div>
-
-    </div>
-
-</section>
 
 {{-- Reviews Section --}}
 <section class="mt-10 py-5">
@@ -475,18 +396,13 @@
     </div>
 </section>
 @endif
-@include('layouts.partials.product-carousel', [
-    'title' => 'Accessories',
-    'products' => $accessoryProducts,
-    'sectionId' => 'accessories',
-    'viewAllRoute' => route('categories.show', ['slug' => $accessoriesCategory->slug ?? 'accessories']),
-])
+
 
 <div class="image-lightbox" id="image-lightbox" onclick="if(event.target === this) closeLightbox()">
     <button type="button" class="image-lightbox-close" onclick="closeLightbox()">&times;</button>
     <img id="lightbox-img" src="" alt="Review image">
 </div>
-@endsection
+
 
 @push('scripts')
     <script>
@@ -703,3 +619,5 @@ document.addEventListener('keydown', function (e) {
     })();
     </script>
 @endpush
+
+@endsection
