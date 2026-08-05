@@ -4,14 +4,14 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Product;
-use App\Models\Stock;
+use App\Models\ProductVariant;
 use Illuminate\Http\Request;
 
 class AdminStockController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Stock::with(['product', 'color', 'phoneStorage']);
+        $query = ProductVariant::with(['product', 'color', 'phoneStorage']);
 
         if ($request->filled('search')) {
             $query->whereHas('product', function ($q) use ($request) {
@@ -22,9 +22,9 @@ class AdminStockController extends Controller
 
         if ($request->filled('stock_status')) {
             match ($request->stock_status) {
-                'out' => $query->where('quantity', 0),
-                'low' => $query->where('quantity', '>', 0)->whereColumn('quantity', '<=', 'low_stock_threshold'),
-                'ok' => $query->whereColumn('quantity', '>', 'low_stock_threshold'),
+                'out' => $query->where('stock', 0),
+                'low' => $query->where('stock', '>', 0)->where('stock', '<=', 10),
+                'ok' => $query->where('stock', '>', 10),
                 default => null,
             };
         }
@@ -37,32 +37,31 @@ class AdminStockController extends Controller
         $products = Product::orderBy('name')->get(['id', 'name']);
 
         $summary = [
-            'total_items' => Stock::sum('quantity'),
-            'out_of_stock' => Stock::where('quantity', 0)->count(),
-            'low_stock' => Stock::where('quantity', '>', 0)->whereColumn('quantity', '<=', 'low_stock_threshold')->count(),
+            'total_items' => ProductVariant::sum('stock'),
+            'out_of_stock' => ProductVariant::where('stock', 0)->count(),
+            'low_stock' => ProductVariant::where('stock', '>', 0)->where('stock', '<=', 10)->count(),
         ];
 
         return view('admin.stock.index', compact('stocks', 'products', 'summary'));
     }
 
-    public function edit(Stock $stock)
+    public function edit(ProductVariant $stock)
     {
         $stock->load(['product', 'color', 'phoneStorage']);
 
         return view('admin.stock.edit', compact('stock'));
     }
 
-    public function update(Request $request, Stock $stock)
+    public function update(Request $request, ProductVariant $stock)
     {
         $validated = $request->validate([
-            'quantity' => 'required|integer|min:0',
-            'low_stock_threshold' => 'required|integer|min:0',
-            'adjustment_note' => 'nullable|string|max:500',
+            'stock' => 'required|integer|min:0',
+            'sku' => 'nullable|string',
         ]);
 
         $stock->update([
-            'quantity' => $validated['quantity'],
-            'low_stock_threshold' => $validated['low_stock_threshold'],
+            'stock' => $validated['stock'],
+            'sku' => $validated['sku'] ?? $stock->sku,
         ]);
 
         return redirect()->route('admin.stock.index')
@@ -73,22 +72,20 @@ class AdminStockController extends Controller
     {
         $validated = $request->validate([
             'stocks' => 'required|array',
-            'stocks.*.id' => 'required|exists:stock,id',
-            'stocks.*.quantity' => 'required|integer|min:0',
-            'stocks.*.low_stock_threshold' => 'required|integer|min:0',
+            'stocks.*.id' => 'required|exists:product_variants,id',
+            'stocks.*.stock' => 'required|integer|min:0',
         ]);
 
         foreach ($validated['stocks'] as $item) {
-            Stock::where('id', $item['id'])->update([
-                'quantity' => $item['quantity'],
-                'low_stock_threshold' => $item['low_stock_threshold'],
+            ProductVariant::where('id', $item['id'])->update([
+                'stock' => $item['stock'],
             ]);
         }
 
         return back()->with('success', 'Stock updated in bulk successfully.');
     }
 
-    public function adjust(Request $request, Stock $stock)
+    public function adjust(Request $request, ProductVariant $stock)
     {
         $validated = $request->validate([
             'type' => 'required|in:add,subtract,set',
@@ -97,12 +94,12 @@ class AdminStockController extends Controller
         ]);
 
         $newQty = match ($validated['type']) {
-            'add' => $stock->quantity + $validated['amount'],
-            'subtract' => max(0, $stock->quantity - $validated['amount']),
+            'add' => $stock->stock + $validated['amount'],
+            'subtract' => max(0, $stock->stock - $validated['amount']),
             'set' => $validated['amount'],
         };
 
-        $stock->update(['quantity' => $newQty]);
+        $stock->update(['stock' => $newQty]);
 
         return back()->with('success', 'Stock adjusted successfully. New quantity: '.$newQty);
     }

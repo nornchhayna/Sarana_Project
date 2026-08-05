@@ -17,7 +17,7 @@
     .form-select option { background: var(--card, #1A1E2B); color: var(--text-1, #E8EAF2); }
 
     .invoice-mono-text { font-family: var(--mono, monospace); font-size: 12px; color: var(--text-3, #555B72); }
-    .invoice-num-link { color: var(--text-1, #E8EAF2); text-decoration: none; font-weight: 700; font-family: var(--mono, monospace); }
+    .invoice-num-link { color: var(--text-1, #E8EAF2); text-decoration: none; font-weight: 700; font-family: var(--mono, monospace); white-space: nowrap; }
     .invoice-num-link:hover { color: var(--accent, #5B6EF5); }
 
     .action-group { display: flex; gap: 6px; justify-content: flex-end; }
@@ -25,11 +25,16 @@
     .btn-action:hover { border-color: var(--accent, #5B6EF5); color: var(--text-1, #E8EAF2); background: rgba(91, 110, 245, 0.1); }
 
     .table-wrap { overflow-x: auto; background: var(--card, #1A1E2B); border-radius: 12px; border: 1px solid var(--border, #252A3A); }
-    table { width: 100%; border-collapse: collapse; }
+    table { width: 100%; border-collapse: collapse; min-width: 800px; }
     thead th { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--text-3, #555B72); padding: 14px 22px; text-align: left; border-bottom: 1px solid var(--border, #252A3A); }
     tbody tr { border-bottom: 1px solid rgba(37, 42, 58, 0.5); }
     tbody tr:hover { background: rgba(255, 255, 255, 0.02); }
     tbody td { padding: 14px 22px; font-size: 13px; color: var(--text-2, #8B90A7); vertical-align: middle; }
+    
+    /* Only prevent wrapping on invoice number and order reference columns */
+    tbody td:nth-child(1), tbody td:nth-child(2) {
+        white-space: nowrap;
+    }
     
     .status-badge { font-size: 10px; font-weight: 600; padding: 4px 10px; border-radius: 20px; font-family: monospace; display: inline-block; }
     .status-paid { background: rgba(0, 212, 170, 0.12); color: #00D4AA; }

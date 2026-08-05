@@ -48,10 +48,14 @@ class Order extends Model
         return $this->belongsTo(Promotion::class);
     }
 
-    public function items(): HasMany
-    {
-        return $this->hasMany(OrderItem::class);
-    }
+    // public function items(): HasMany
+    // {
+    //     return $this->hasMany(OrderItem::class);
+    // }
+    public function items()
+{
+    return $this->hasMany(OrderItem::class, 'order_id'); // or whatever it actually is, e.g. 'orderId'
+}
 
     public function payments(): HasMany
     {
@@ -123,12 +127,12 @@ class Order extends Model
     }
 
     // On Order model
-public function canReview(Product $product): bool
-{
-    return $this->status === 'delivered'
-        && ! Review::where('user_id', $this->user_id)
-            ->where('product_id', $product->id)
-            ->where('order_id', $this->id)
-            ->exists();
-}
+    public function canReview(Product $product): bool
+    {
+        return $this->status === 'delivered'
+            && ! Review::where('user_id', $this->user_id)
+                ->where('product_id', $product->id)
+                ->where('order_id', $this->id)
+                ->exists();
+    }
 }

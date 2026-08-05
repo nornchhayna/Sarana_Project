@@ -5,55 +5,67 @@
     {{-- ── TOP BAR: Logo + Icons ── --}}
     <div class="header-top">
         <div class="container">
-
             {{-- Logo --}}
             <a href="{{ route('home') }}" class="site-logo">
                 <span class="logo-text">PhoneBy<strong>Ashahi</strong></span>
             </a>
-
             {{-- Right icons --}}
             <div class="header-icons">
-
                 {{-- Language / globe --}}
-                <div class="icon-link dropdown-trigger" title="Language">
-                    <i class="fa-solid fa-globe"></i>
-                    <i class="fa-solid fa-chevron-down chevron-sm"></i>
-                </div>
+             <div class="icon-link dropdown-trigger" title="Language">
+    <i class="fa-solid fa-globe"></i>
+    <i class="fa-solid fa-chevron-down chevron-sm"></i>
+
+    <div class="dropdown-menu">
+        <a href="{{ route('lang.switch', 'en') }}" class="dropdown-item {{ app()->getLocale() == 'en' ? 'active' : '' }}">
+            🇬🇧 {{ __('messages.english') }}
+        </a>
+        <a href="{{ route('lang.switch', 'km') }}" class="dropdown-item {{ app()->getLocale() == 'km' ? 'active' : '' }}">
+            🇰🇭 {{ __('messages.khmer') }}
+        </a>
+    </div>
+</div>
 
                 {{-- Wishlist --}}
-                <a href="{{ route('wishlist.index') }}" class="icon-link" title="Wishlist">
+                <a href="{{ route('wishlist.index') }}" class="icon-link position-relative" title="Wishlist">
                     <i class="fa-regular fa-heart"></i>
+                    @if($wishlistCount ?? 0)
+                        <span class="icon-badge">{{ $wishlistCount }}</span>
+                    @endif
                 </a>
 
                 {{-- Cart --}}
                 <a href="{{ route('cart.index') }}" class="icon-link position-relative" title="Cart">
                     <i class="fa-solid fa-bag-shopping"></i>
                     @if($cartCount ?? 0)
-                        <span class="icon-badge">{{ $cartCount }}</span>
+                        <span class="icon-badge ">{{ $cartCount }}</span>
                     @endif
                 </a>
-
+                <div class="flex items-center gap-4">
+                    <x-notification-bell />
+                    {{-- other nav items --}}
+                </div>
                 {{-- Account --}}
                 @guest
                     <a href="{{ route('auth.login') }}" class="icon-link" title="Sign in">
                         <i class="fa-regular fa-user"></i>
                     </a>
                 @else
-                    <div class="icon-link dropdown-trigger" title="Account">
-                        <i class="fa-regular fa-user"></i>
-                        <div class="dropdown-menu">
-                            <a href="{{ route('profile.show') }}"><i class="fa-regular fa-user"></i> Profile</a>
-                            <a href="{{ route('orders.index') }}"><i class="fa-solid fa-bag-shopping"></i> My Orders</a>
-                            <a href="{{ route('wishlist.index') }}"><i class="fa-regular fa-heart"></i> Wishlist</a>
-                            <div class="dropdown-divider"></div>
-                            <a href="{{ route('logout') }}"
-                                onclick="event.preventDefault(); document.getElementById('nav-logout-form').submit();">
-                                <i class="fa-solid fa-right-from-bracket"></i> Logout
-                            </a>
-                        </div>
+                  <div class="icon-link dropdown-trigger" title="Account" id="account-dropdown-trigger">
+                    <i class="fa-regular fa-user"></i>
+                    <div class="dropdown-menu">
+                        <a href="{{ route('profile.index') }}"><i class="fa-regular fa-user"></i> Profile</a>
+                        <a href="{{ route('orders.index') }}"><i class="fa-solid fa-bag-shopping"></i> My Orders</a>
+                        <a href="{{ route('wishlist.index') }}"><i class="fa-regular fa-heart"></i> Wishlist</a>
+                        <div class="dropdown-divider"></div>
+                        <a href="{{ route('logout') }}" data-logout-link>
+                            <i class="fa-solid fa-right-from-bracket"></i> Logout
+                        </a>
                     </div>
-                    <form id="nav-logout-form" action="{{ route('logout') }}" method="POST" style="display:none;">@csrf
-                    </form>
+                  </div>
+                  <form data-logout-form action="{{ route('logout') }}" method="POST" style="display:none;">
+                    @csrf
+                  </form>
                 @endguest
 
             </div>
@@ -67,55 +79,55 @@
 
             {{-- Search --}}
             <form action="{{ route('products.index') }}" method="GET" class="header-search">
-                <input type="text" name="q" value="{{ request('q') }}" placeholder="Search Product ..."
+                <input type="text" name="q" value="{{ request('q') }}" placeholder="{{ __('messages.search_placeholder') }}"
                     class="search-input" autocomplete="off">
                 <button type="submit" class="search-btn">
                     <i class="fa-solid fa-magnifying-glass"></i>
                 </button>
             </form>
+<ul class="nav-list">
+    <li><a href="{{ route('home') }}" class="{{ request()->routeIs('home') ? 'active' : '' }}">{{ __('messages.home') }}</a></li>
 
-            <ul class="nav-list">
-                <li><a href="{{ route('home') }}" class="{{ request()->routeIs('home') ? 'active' : '' }}">Home</a></li>
-                <li class="has-mega">
-                    <a href="{{ route('products.index') }}"
-                        class="{{ request()->routeIs('products.*') ? 'active' : '' }}">
-                        Phone
-                    </a>
-                    <div class="mega-menu">
-                        <div class="mega-col">
-                            <div class="mega-label">By Brand</div>
-                            @foreach(\App\Models\Brand::take(8)->get() as $brand)
-                                <a href="{{ route('products.index', ['brand' => $brand->id]) }}">{{ $brand->name }}</a>
-                            @endforeach
-                        </div>
-                        <div class="mega-col">
-                            <div class="mega-label">By Category</div>
-                            @foreach(\App\Models\Category::take(8)->get() as $cat)
-                                <a href="{{ route('products.index', ['category' => $cat->id]) }}">{{ $cat->name }}</a>
-                            @endforeach
-                        </div>
-                        <div class="mega-col">
-                            <div class="mega-label">Shop By</div>
-                            <a href="{{ route('products.index', ['sort' => 'newest']) }}">New Arrivals</a>
-                            <a href="{{ route('products.index', ['sort' => 'bestseller']) }}">Best Sellers</a>
-                            <a href="{{ route('products.index', ['sale' => 1]) }}">On Sale</a>
-                        </div>
-                    </div>
-                </li>
-                <li><a href="{{ route('products.index', ['category' => 'accessories']) }}">Accessories</a></li>
-                <li><a href="{{ route('contact.index') }}">Contact Us</a></li>
-                <li><a href="{{ route('orders.index') }}">My Orders</a></li>
-            </ul>
-
+  <li class="has-mega">
+    <a href="{{ route('products.index') }}"
+        class="{{ request()->routeIs('products.*') ? 'active' : '' }}">
+        {{ __('messages.phone') }}
+    </a>
+    <!-- <button type="button" class="mega-toggle" aria-label="Toggle Phone menu" aria-expanded="false">
+        <i class="fa-solid fa-chevron-down text-xs"></i>
+    </button> -->
+    <div class="mega-menu">
+        <div class="mega-col">
+            <div class="mega-label">{{ __('messages.brands') }}</div>
+            @foreach(\App\Models\Brand::take(8)->get() as $brand)
+                <a href="{{ route('products.index', ['brand' => $brand->slug]) }}">{{ $brand->name }}</a>
+            @endforeach
+        </div>
+        <div class="mega-col">
+            <div class="mega-label">{{ __('messages.products') }}</div>
+            @foreach(\App\Models\Category::take(8)->get() as $cat)
+                <a href="{{ route('products.index', ['category' => $cat->slug]) }}">{{ $cat->name }}</a>
+            @endforeach
+        </div>
+        <div class="mega-col">
+            <div class="mega-label">Shop By</div>
+            <a href="{{ route('products.index', ['sort' => 'newest']) }}">New Arrivals</a>
+            <a href="{{ route('products.index', ['sort' => 'best_seller']) }}">Best Sellers</a>
+            <a href="{{ route('products.index', ['on_sale' => 1]) }}">On Sale</a>
+        </div>
+    </div>
+</li>
+    <li><a href="{{ route('products.index', ['category' => 'accessories']) }}">{{ __('messages.accessories') }}</a></li>
+    <li><a href="{{ route('contact.index') }}">{{ __('messages.contact') }}</a></li>
+    <li><a href="{{ route('orders.index') }}">{{ __('messages.my_orders') }}</a></li>
+</ul>
             {{-- Mobile hamburger --}}
             <button class="hamburger" id="hamburger" aria-label="Open menu">
                 <span></span><span></span><span></span>
             </button>
         </div>
     </nav>
-
 </header>
-
 <style>
     :root {
         --clr-navbar-blue: #ffffff;
@@ -189,12 +201,12 @@
 
     .icon-badge {
         position: absolute;
-        top: -7px;
-        right: -9px;
-        min-width: 16px;
-        height: 16px;
-        background: var(--clr-danger);
-        color: #ff0000;
+        top: -13px;
+        right: -15px;
+        min-width: 21px;
+        height: 21px;
+        background: #e30b0b;
+        color: #f9f9f9;
         border-radius: 50%;
         font-size: 9px;
         font-weight: 700;
@@ -202,27 +214,45 @@
         place-items: center;
         border: 2px solid var(--clr-white);
     }
+    /* Account + language dropdown, and mega menu — must beat the hamburger */
+.dropdown-menu {
+    position: absolute;
+    top: calc(100% + 12px);
+    right: 0;
+    background: var(--clr-white);
+    border: 1px solid var(--clr-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    min-width: 180px;
+    padding: 8px 0;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(6px);
+    transition: all var(--ease);
+    z-index: 600; /* was 300 */
+}
+
+.mega-menu {
+    /* ...unchanged... */
+    z-index: 600; /* was 300 */
+}
+
+/* Hamburger button itself — keep it clickable, but below dropdowns */
+.hamburger {
+    /* ...unchanged... */
+    z-index: 550; /* was 500 */
+}
+
+/* Mobile nav-list — give it an explicit, lower z-index */
+.nav-list {
+    /* ...unchanged... */
+    z-index: 400;
+    position: relative; /* needed for z-index to apply */
+}
 
     /* Account dropdown */
     .dropdown-trigger {
         position: relative;
-    }
-
-    .dropdown-menu {
-        position: absolute;
-        top: calc(100% + 12px);
-        right: 0;
-        background: var(--clr-white);
-        border: 1px solid var(--clr-border);
-        border-radius: var(--radius-lg);
-        box-shadow: var(--shadow-lg);
-        min-width: 180px;
-        padding: 8px 0;
-        opacity: 0;
-        visibility: hidden;
-        transform: translateY(6px);
-        transition: all var(--ease);
-        z-index: 300;
     }
 
     .dropdown-trigger:hover .dropdown-menu {
@@ -230,6 +260,11 @@
         visibility: visible;
         transform: translateY(0);
     }
+    .nav-item-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
     .logo-text {
         font-family: var(--font-display);
         font-size: 22px;
@@ -394,79 +429,236 @@
         color: var(--clr-navbar-blue);
         padding-left: 4px;
     }
+/* Keep hover for desktop pointer devices */
+@media (hover: hover) {
+    .dropdown-trigger:hover .dropdown-menu {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+    }
+}
 
-    /* Hamburger */
+/* Click/tap-driven state for touch devices (and desktop click too) */
+.dropdown-trigger.open .dropdown-menu {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+    /* =========================
+   Hamburger Menu
+========================= */
+
+.hamburger {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+    width: 38px;
+    height: 38px;
+    padding: 8px;
+    background: transparent;
+    border: 1px solid #10336b;
+    border-radius: 8px;
+    cursor: pointer;
+    z-index: 500;
+}
+
+.hamburger span {
+    width: 22px;
+    height: 2px;
+    background: #10336b;
+    border-radius: 5px;
+    transition: all .3s ease;
+}
+
+
+/* Hamburger animation */
+.hamburger.active span:nth-child(1) {
+    transform: rotate(45deg) translate(5px, 5px);
+}
+
+.hamburger.active span:nth-child(2) {
+    opacity: 0;
+}
+
+.hamburger.active span:nth-child(3) {
+    transform: rotate(-45deg) translate(5px, -5px);
+}
+
+
+/* =========================
+   Mobile Responsive
+========================= */
+
+@media (max-width:768px) {
+
+    .header-nav .container {
+        flex-wrap: wrap;
+        position: relative;
+    }
+
+
+    /* Search */
+    .header-search {
+        order: 1;
+        width: calc(100% - 55px);
+        max-width: none;
+    }
+
+
+    /* Hamburger show */
     .hamburger {
+        display: flex;
+        order: 2;
+        margin-left: auto;
+    }
+
+
+    /* Mobile menu */
+    .nav-list {
         display: none;
         flex-direction: column;
-        gap: 5px;
-        padding: 8px;
-        background: none;
-        border: none;
-        cursor: pointer;
-    }
-
-    .hamburger span {
-        display: block;
-        width: 22px;
-        height: 2px;
+        align-items: flex-start;
+        width: 100%;
+        order: 3;
+        margin-top: 10px;
+        padding: 10px;
         background: #fff;
-        border-radius: 2px;
-        transition: all var(--ease);
+        border-radius: 12px;
+
+        box-shadow: 0 8px 25px rgba(0,0,0,.15);
     }
 
-    /* ── RESPONSIVE ── */
-    @media (max-width: 900px) {
-        .header-search {
-            max-width: 260px;
-        }
+
+    .nav-list.open {
+        display: flex;
     }
 
-    @media (max-width: 768px) {
-        .header-nav .container {
-            flex-wrap: wrap;
-        }
 
-        .header-search {
-            order: 1;
-            max-width: none;
-            flex: 1 1 100%;
-        }
-
-        .hamburger {
-            display: flex;
-            order: 2;
-        }
-
-        .nav-list {
-            display: none;
-            flex-direction: column;
-            align-items: flex-start;
-            width: 100%;
-            order: 3;
-            padding: 8px 0 0;
-        }
-
-        .nav-list.open {
-            display: flex;
-        }
-
-        .nav-list>li {
-            width: 100%;
-        }
-
-        .nav-list>li>a {
-            padding: 10px 4px;
-        }
-
-        .mega-menu {
-            display: none;
-        }
+    .nav-list > li {
+        width:100%;
     }
+
+
+    .nav-list > li > a {
+        width:100%;
+        padding:12px 10px;
+        color:#10336b;
+    }
+
+
+    /* Hide mega menu on mobile */
+    .mega-menu {
+        display:none;
+    }
+
+}
 </style>
 
+
 <script>
-    document.getElementById('hamburger')?.addEventListener('click', function () {
-        document.querySelector('.nav-list')?.classList.toggle('open');
+document.addEventListener('DOMContentLoaded', function () {
+
+    // Hamburger
+    const hamburger = document.getElementById('hamburger');
+    const navList = document.querySelector('.nav-list');
+    hamburger?.addEventListener('click', function () {
+        navList.classList.toggle('open');
+        hamburger.classList.toggle('active');
     });
+
+    // Mega menu (unchanged logic, kept as-is)
+    document.querySelectorAll('.has-mega').forEach(function (item) {
+        const toggleBtn = item.querySelector('.mega-toggle');
+        toggleBtn?.addEventListener('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const isOpen = item.classList.contains('mega-open');
+            document.querySelectorAll('.has-mega.mega-open').forEach(function (openItem) {
+                if (openItem !== item) {
+                    openItem.classList.remove('mega-open');
+                    openItem.querySelector('.mega-toggle')?.setAttribute('aria-expanded', 'false');
+                }
+            });
+            item.classList.toggle('mega-open', !isOpen);
+            toggleBtn.setAttribute('aria-expanded', String(!isOpen));
+        });
+    });
+
+    // ── Account dropdown + logout, via delegation ──
+    document.addEventListener('click', function (e) {
+
+        const trigger = e.target.closest('#account-dropdown-trigger');
+        const logoutLink = e.target.closest('[data-logout-link]');
+        const mega = e.target.closest('.has-mega');
+
+        // Logout: handle first, before anything else can interfere
+        if (logoutLink) {
+            e.preventDefault();
+            const form = document.querySelector('[data-logout-form]');
+            form?.submit();
+            return;
+        }
+
+        // Toggle account dropdown
+        if (trigger) {
+            trigger.classList.toggle('open');
+        } else {
+            document.querySelectorAll('.dropdown-trigger.open').forEach(t => t.classList.remove('open'));
+        }
+
+        // Close mega menu if clicking fully outside it
+        if (!mega) {
+            document.querySelectorAll('.has-mega.mega-open').forEach(function (openItem) {
+                openItem.classList.remove('mega-open');
+                openItem.querySelector('.mega-toggle')?.setAttribute('aria-expanded', 'false');
+            });
+        }
+    });
+
+    // ── Theme toggle ──
+    const toggleBtn = document.getElementById('theme-toggle');
+
+    console.log('Theme toggle button found:', !!toggleBtn);
+
+    if (toggleBtn) {
+        // Load saved theme preference
+        const savedTheme = localStorage.getItem('theme');
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        
+        console.log('Saved theme:', savedTheme, 'Prefers dark:', prefersDark);
+        
+        if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+            document.documentElement.classList.add('dark');
+            console.log('Added dark class on load');
+        }
+
+        toggleBtn.addEventListener('click', () => {
+            const isDark = document.documentElement.classList.toggle('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            console.log('Theme toggled to:', isDark ? 'dark' : 'light');
+            console.log('HTML classes:', document.documentElement.classList.toString());
+            console.log('HTML element has dark class:', document.documentElement.classList.contains('dark'));
+        });
+    }
+
+    // Optional: live-update if user changes OS setting while tab is open
+    // and they haven't manually overridden it yet
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+        if (!localStorage.getItem('theme')) {
+            document.documentElement.classList.toggle('dark', e.matches);
+        }
+    });
+
+});
+
+document.querySelector('.dropdown-trigger').addEventListener('click', function (e) {
+    this.classList.toggle('open');
+});
+document.addEventListener('click', function (e) {
+    if (!e.target.closest('.dropdown-trigger')) {
+        document.querySelector('.dropdown-trigger').classList.remove('open');
+    }
+});
 </script>

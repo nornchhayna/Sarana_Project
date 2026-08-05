@@ -12,13 +12,13 @@ class AdminMiddleware
     public function handle(Request $request, Closure $next): Response
     {
         // Not logged in → send to admin login page
-        if (! Auth::check()) {
+        if (! Auth::guard('admin')->check()) {
             return redirect()->route('admin.login')
                 ->with('error', 'Please log in to access the admin panel.');
         }
 
         // Logged in but not admin or webmaster → 403, do NOT redirect to admin dashboard
-        if (! in_array(Auth::user()->role, ['admin', 'webmaster'], true)) {
+        if (! in_array(Auth::guard('admin')->user()->role, ['admin', 'webmaster'], true)) {
             abort(403, 'You do not have permission to access the admin panel.');
         }
 

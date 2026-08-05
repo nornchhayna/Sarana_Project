@@ -16,6 +16,8 @@ use App\Http\Controllers\Admin\AdminSliderController;
 use App\Http\Controllers\Admin\AdminStockController;
 use App\Http\Controllers\Admin\AdminStorageController;
 use App\Http\Controllers\Admin\AdminUserController;
+use App\Http\Controllers\Admin\AdminBlogController;
+
 use Illuminate\Support\Facades\Route;
 
 // Dashboard
@@ -25,12 +27,10 @@ Route::get('/stats', [AdminDashboardController::class, 'stats'])->name('stats');
 // ── Users ─────────────────────────────────────
 Route::prefix('users')->name('users.')->group(function () {
     Route::get('/', [AdminUserController::class, 'index'])->name('index');
+    Route::patch('/{user}/toggle-status', [AdminUserController::class, 'toggleStatus'])->name('toggleStatus');
     Route::get('/{user}', [AdminUserController::class, 'show'])->name('show');
-
-    // ADD THESE MISSING REPOSITORIES PLUGINS NATIVELY:
     Route::get('/{user}/edit', [AdminUserController::class, 'edit'])->name('edit');
     Route::put('/{user}', [AdminUserController::class, 'update'])->name('update');
-
     Route::patch('/{user}/ban', [AdminUserController::class, 'ban'])->name('ban');
     Route::patch('/{user}/unban', [AdminUserController::class, 'unban'])->name('unban');
     Route::delete('/{user}', [AdminUserController::class, 'destroy'])->name('destroy');
@@ -41,8 +41,7 @@ Route::prefix('products')->name('products.')->group(function () {
     Route::get('/', [AdminProductController::class, 'index'])->name('index');
     Route::get('/create', [AdminProductController::class, 'create'])->name('create');
     Route::post('/', [AdminProductController::class, 'store'])->name('store');
-    Route::post('/products/{product}/toggle-featured', [ProductController::class, 'toggleFeatured'])
-        ->name('admin.products.toggle-featured');
+    Route::post('/products/{product}/toggle-featured', [ProductController::class, 'toggleFeatured'])->name('admin.products.toggle-featured');
     Route::get('/{product}', [AdminProductController::class, 'show'])->name('show');
     Route::get('/{product}/edit', [AdminProductController::class, 'edit'])->name('edit');
     Route::put('/{product}', [AdminProductController::class, 'update'])->name('update');
@@ -62,7 +61,15 @@ Route::prefix('categories')->name('categories.')->group(function () {
     Route::put('/{category}', [AdminCategoryController::class, 'update'])->name('update');
     Route::delete('/{category}', [AdminCategoryController::class, 'destroy'])->name('destroy');
 });
-
+// ── Blogs ──────────────────────────────────────
+Route::prefix('blogs')->name('blogs.')->group(function () {
+    Route::get('/', [AdminBlogController::class, 'index'])->name('index');
+    Route::get('/create', [AdminBlogController::class, 'create'])->name('create');
+    Route::post('/', [AdminBlogController::class, 'store'])->name('store');
+    Route::get('/{blog}/edit', [AdminBlogController::class, 'edit'])->name('edit');
+    Route::put('/{blog}', [AdminBlogController::class, 'update'])->name('update');
+    Route::delete('/{blog}', [AdminBlogController::class, 'destroy'])->name('destroy');
+});
 // ── Brands ─────────────────────────────────────
 Route::prefix('brands')->name('brands.')->group(function () {
     Route::get('/', [AdminBrandController::class, 'index'])->name('index');
@@ -106,27 +113,23 @@ Route::prefix('storages')->name('storages.')->group(function () {
 
 // ── Stock ──────────────────────────────────────
 Route::prefix('stock')->name('stock.')->group(function () {
-    // 1. Specific routes go FIRST
     Route::put('/bulk-update', [AdminStockController::class, 'bulkUpdate'])->name('bulk-update');
-    // 2. Wildcard routes go LAST
     Route::get('/', [AdminStockController::class, 'index'])->name('index');
     Route::get('/{stock}/edit', [AdminStockController::class, 'edit'])->name('edit');
     Route::put('/{stock}', [AdminStockController::class, 'update'])->name('update');
+    Route::post('/{stock}/adjust', [AdminStockController::class, 'adjust'])->name('adjust');
 });
-
-Route::prefix('sliders')
-    ->name('sliders.')
-    ->group(function () {
-
-        Route::get('/', [AdminSliderController::class, 'index'])->name('index');
-        Route::get('/create', [AdminSliderController::class, 'create'])->name('create');
-        Route::post('/', [AdminSliderController::class, 'store'])->name('store');
-        Route::get('/{slider}/edit', [AdminSliderController::class, 'edit'])->name('edit');
-        Route::put('/{slider}', [AdminSliderController::class, 'update'])->name('update');
-        Route::delete('/{slider}', [AdminSliderController::class, 'destroy'])->name('destroy');
-        Route::patch('/{slider}/toggle-status', [AdminSliderController::class, 'toggleStatus'])->name('toggleStatus');
-        Route::post('/reorder', [AdminSliderController::class, 'reorder'])->name('reorder');
-    });
+// ── Sliders ─────────────────────────────────────
+Route::prefix('sliders')->name('sliders.')->group(function () {
+    Route::get('/', [AdminSliderController::class, 'index'])->name('index');
+    Route::get('/create', [AdminSliderController::class, 'create'])->name('create');
+    Route::post('/', [AdminSliderController::class, 'store'])->name('store');
+    Route::get('/{slider}/edit', [AdminSliderController::class, 'edit'])->name('edit');
+    Route::put('/{slider}', [AdminSliderController::class, 'update'])->name('update');
+    Route::delete('/{slider}', [AdminSliderController::class, 'destroy'])->name('destroy');
+    Route::patch('/{slider}/toggle-status', [AdminSliderController::class, 'toggleStatus'])->name('toggleStatus');
+    Route::post('/reorder', [AdminSliderController::class, 'reorder'])->name('reorder');
+});
 // ── Promotions ─────────────────────────────────
 Route::prefix('promotions')->name('promotions.')->group(function () {
     Route::get('/', [AdminPromotionController::class, 'index'])->name('index');
@@ -143,12 +146,8 @@ Route::prefix('orders')->name('orders.')->group(function () {
     Route::get('/', [AdminOrderController::class, 'index'])->name('index');
     Route::get('/export', [AdminOrderController::class, 'export'])->name('export'); // ADDED EXPORT ROUTE
     Route::get('/{order}', [AdminOrderController::class, 'show'])->name('show');
-
-    // Update these to match the method names and verbs your controller expects:
     Route::put('/{order}/status', [AdminOrderController::class, 'updateStatus'])->name('updateStatus');
     Route::post('/{order}/cancel', [AdminOrderController::class, 'cancel'])->name('cancel');
-
-    // Keep your destroy if you use it elsewhere, otherwise your controller uses cancel()
     Route::delete('/{order}', [AdminOrderController::class, 'destroy'])->name('destroy');
 });
 
@@ -172,21 +171,19 @@ Route::prefix('invoices')->name('invoices.')->group(function () {
 Route::prefix('reviews')->name('reviews.')->group(function () {
     Route::get('/', [AdminReviewController::class, 'index'])->name('index');
     Route::get('/{review}', [AdminReviewController::class, 'show'])->name('show');
-
-    // 1. ADD THIS BULK ROUTE NATIVELY:
     Route::post('/bulk-approve', [AdminReviewController::class, 'bulkApprove'])->name('bulkApprove');
-
-    // 2. SWITCH THESE FROM PATCH TO PUT:
     Route::put('/{review}/approve', [AdminReviewController::class, 'approve'])->name('approve');
     Route::put('/{review}/reject', [AdminReviewController::class, 'reject'])->name('reject');
-
     Route::delete('/{review}', [AdminReviewController::class, 'destroy'])->name('destroy');
 });
 
-// ── Contacts / Messages ────────────────────────
+
 Route::prefix('contacts')->name('contacts.')->group(function () {
     Route::get('/', [AdminContactController::class, 'index'])->name('index');
     Route::get('/{contact}', [AdminContactController::class, 'show'])->name('show');
-    Route::patch('/{contact}/resolve', [AdminContactController::class, 'resolve'])->name('resolve');
+    Route::post('/{contact}/reply', [AdminContactController::class, 'reply'])->name('reply');
+    Route::post('/{contact}/mark-read', [AdminContactController::class, 'markRead'])->name('mark-read');
+    Route::post('/bulk-mark-read', [AdminContactController::class, 'bulkMarkRead'])->name('bulk-mark-read');
+    Route::post('/bulk-destroy', [AdminContactController::class, 'bulkDestroy'])->name('bulk-destroy');
     Route::delete('/{contact}', [AdminContactController::class, 'destroy'])->name('destroy');
 });

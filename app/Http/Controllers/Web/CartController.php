@@ -6,8 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\Product;
+use App\Models\ProductVariant;
 use App\Models\Promotion;
-use App\Models\Stock;
 use Illuminate\Http\Request;
 
 class CartController extends Controller
@@ -38,79 +38,132 @@ class CartController extends Controller
         return view('web.cart.index', compact('cart'));
     }
 
-    public function add(Request $request)
-    {
-        // 1. Mandatory Security Gate
-        if (! auth()->check()) {
-            return redirect()->route('login')
-                ->with('error', 'Please login to add items to your cart.');
+ public function add(Request $request)
+{
+    // 1. Mandatory Security Gate
+    if (! auth()->check()) {
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Please login to add items to your cart.',
+                'redirect' => route('login'),
+            ], 401);
         }
-        $validated = $request->validate([
-            'product_id' => 'required|exists:products,id',
-            'color_id' => 'nullable|exists:colors,id',
-            'phone_storage_id' => 'nullable|exists:phone_storages,id',
-            'quantity' => 'required|integer|min:1|max:100',
+        return redirect()->route('login')
+            ->with('error', 'Please login to add items to your cart.');
+    }
+
+    $validated = $request->validate([
+        'product_id' => 'required|exists:products,id',
+        'color_id' => 'nullable|exists:colors,id',
+        'phone_storage_id' => 'nullable|exists:phone_storages,id',
+        'quantity' => 'required|integer|min:1|max:100',
+    ]);
+
+    $product = Product::with(['variants'])->findOrFail($validated['product_id']);
+
+    if (! $product->is_active) {
+        return $this->cartError($request, 'This product is no longer available.');
+    }
+
+    $colorId = $validated['color_id'] ?? null;
+    $storageId = $validated['phone_storage_id'] ?? null;
+
+    // 3. Variant resolution
+    // If the caller didn't specify color/storage (e.g. a one-click "Add to
+    // cart" from a listing/wishlist page), and this product only has a
+    // single variant, use that variant automatically. If it has more than
+    // one, we can't guess which one they want.
+    $variant = ProductVariant::where('product_id', $product->id)
+        ->where('color_id', $colorId)
+        ->where('phone_storage_id', $storageId)
+        ->first();
+
+    if (! $variant && $colorId === null && $storageId === null) {
+        if ($product->variants->count() === 1) {
+            $variant = $product->variants->first();
+        } elseif ($product->variants->count() > 1) {
+            return $this->cartError(
+                $request,
+                'Please select a color/storage option for this product before adding it to your cart.',
+                needsSelection: true,
+                product: $product
+            );
+        }
+    }
+
+    if (! $variant || $variant->stock < $validated['quantity']) {
+        return $this->cartError($request, 'Insufficient stock for the selected options.');
+    }
+
+    // 4. Price Calculation
+    $unitPrice = $variant->price ?? ($product->sale_price ?? $product->base_price);
+
+    // 5. Cart Resolution & Persistence
+    $cart = $this->resolveCart($request);
+    $existingItem = $cart->items()
+        ->where('product_id', $product->id)
+        ->where('color_id', $variant->color_id)
+        ->where('phone_storage_id', $variant->phone_storage_id)
+        ->first();
+
+    if ($existingItem) {
+        $newQty = $existingItem->quantity + $validated['quantity'];
+        if ($variant->stock < $newQty) {
+            return $this->cartError($request, 'Not enough stock to add more of this item.');
+        }
+        $existingItem->update(['quantity' => $newQty]);
+        $cartItem = $existingItem;
+    } else {
+        $cartItem = $cart->items()->create([
+            'product_id' => $product->id,
+            'color_id' => $variant->color_id,
+            'phone_storage_id' => $variant->phone_storage_id,
+            'quantity' => $validated['quantity'],
+            'unit_price' => $unitPrice,
         ]);
+    }
 
-        $product = Product::with(['colors', 'storages'])->findOrFail($validated['product_id']);
-
-        if (! $product->is_active) {
-
-            return back()->with('error', 'This product is no longer available.');
-        }
-
-        $stock = Stock::where('product_id', $product->id)
-            ->where('color_id', $validated['color_id'] ?? null)
-            ->where('phone_storage_id', $validated['phone_storage_id'] ?? null)
-            ->first();
-
-        if (! $stock || $stock->quantity < $validated['quantity']) {
-
-            return back()->with('error', 'Insufficient stock for the selected options.');
-        }
-
-        // 4. Price Calculation
-        $unitPrice = $product->sale_price ?? $product->base_price;
-        if (! empty($validated['color_id'])) {
-            $colorAdj = $product->colors()->where('color_id', $validated['color_id'])->first()?->pivot->price_adjustment ?? 0;
-            $unitPrice += $colorAdj;
-        }
-        if (! empty($validated['phone_storage_id'])) {
-            $storageAdj = $product->storages()->where('phone_storage_id', $validated['phone_storage_id'])->first()?->pivot->price_adjustment ?? 0;
-            $unitPrice += $storageAdj;
-        }
-
-        // 5. Cart Resolution & Persistence
-        $cart = $this->resolveCart($request);
-        $existingItem = $cart->items()
-            ->where('product_id', $product->id)
-            ->where('color_id', $validated['color_id'] ?? null)
-            ->where('phone_storage_id', $validated['phone_storage_id'] ?? null)
-            ->first();
-
-        if ($existingItem) {
-            $newQty = $existingItem->quantity + $validated['quantity'];
-            if ($stock->quantity < $newQty) {
-                return back()->with('error', 'Not enough stock to add more of this item.');
-            }
-            $existingItem->update(['quantity' => $newQty]);
-        } else {
-            // Note: 'total_price' is removed here to prevent SQL errors
-            $cart->items()->create([
-                'product_id' => $product->id,
-                'color_id' => $validated['color_id'] ?? null,
-                'phone_storage_id' => $validated['phone_storage_id'] ?? null,
-                'quantity' => $validated['quantity'],
-                'unit_price' => $unitPrice,
+    // 6. Redirect based on buy_now flag
+    if ($request->boolean('buy_now')) {
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'redirect' => route('checkout.index'),
             ]);
         }
-        // 6. Redirect based on buy_now flag
-        if ($request->boolean('buy_now')) {
-            return redirect()->route('checkout.index');
-        }
-
-        return back()->with('success', 'Item added to cart.');
+        return redirect()->route('checkout.index');
     }
+
+    if ($request->wantsJson()) {
+        return response()->json([
+            'success' => true,
+            'message' => 'Item added to cart.',
+            'cart_item_id' => $cartItem->id,
+            'cart_count' => $cart->items()->sum('quantity'),
+        ]);
+    }
+
+    return back()->with('success', 'Item added to cart.');
+}
+
+/**
+ * Return an error either as JSON (for fetch/AJAX callers) or as a
+ * classic redirect-back-with-flash (for plain form submits).
+ */
+protected function cartError(Request $request, string $message, bool $needsSelection = false, ?Product $product = null)
+{
+    if ($request->wantsJson()) {
+        return response()->json([
+            'success' => false,
+            'message' => $message,
+            'needs_selection' => $needsSelection,
+            'product_url' => $product ? route('products.show', $product->slug) : null,
+        ], 422);
+    }
+
+    return back()->with('error', $message);
+}
 
     // ─── Update quantity ────────────────────────────────────────────────────
 
@@ -122,12 +175,12 @@ class CartController extends Controller
             'quantity' => 'required|integer|min:1|max:100',
         ]);
 
-        $stock = Stock::where('product_id', $cartItem->product_id)
+        $variant = ProductVariant::where('product_id', $cartItem->product_id)
             ->where('color_id', $cartItem->color_id)
             ->where('phone_storage_id', $cartItem->phone_storage_id)
             ->first();
 
-        if (! $stock || $stock->quantity < $validated['quantity']) {
+        if (! $variant || $variant->stock < $validated['quantity']) {
             return back()->with('error', 'Insufficient stock.');
         }
 

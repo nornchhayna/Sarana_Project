@@ -16,20 +16,44 @@ class NotificationController extends Controller
 
     public function index()
     {
-        $notifications = auth()->user()
-            ->notifications()
-            ->paginate(20);
+        // Get user from multiple guards
+        $user = null;
+        foreach (['customer', 'web', 'admin', 'webmaster'] as $guard) {
+            if (auth()->guard($guard)->check()) {
+                $user = auth()->guard($guard)->user();
+                break;
+            }
+        }
 
-        return view('web.notifications.index', compact('notifications'));
+        if (! $user) {
+            return redirect()->route('auth.login');
+        }
+
+        $contacts = $user->contacts()
+            ->latest()
+            ->paginate(15);
+
+        return view('web.notifications.index', compact('contacts'));
     }
 
     // ─── Mark a notification as read ────────────────────────────────────────
 
     public function markAsRead(Request $request, string $id)
     {
-        $notification = auth()->user()
-            ->notifications()
-            ->findOrFail($id);
+        // Get user from multiple guards
+        $user = null;
+        foreach (['customer', 'web', 'admin', 'webmaster'] as $guard) {
+            if (auth()->guard($guard)->check()) {
+                $user = auth()->guard($guard)->user();
+                break;
+            }
+        }
+
+        if (! $user) {
+            return response()->json(['success' => false], 401);
+        }
+
+        $notification = $user->notifications()->findOrFail($id);
 
         $notification->markAsRead();
 
@@ -44,7 +68,20 @@ class NotificationController extends Controller
 
     public function markAllAsRead()
     {
-        auth()->user()->unreadNotifications->markAsRead();
+        // Get user from multiple guards
+        $user = null;
+        foreach (['customer', 'web', 'admin', 'webmaster'] as $guard) {
+            if (auth()->guard($guard)->check()) {
+                $user = auth()->guard($guard)->user();
+                break;
+            }
+        }
+
+        if (! $user) {
+            return redirect()->route('auth.login');
+        }
+
+        $user->unreadNotifications->markAsRead();
 
         return back()->with('success', 'All notifications marked as read.');
     }
@@ -53,9 +90,20 @@ class NotificationController extends Controller
 
     public function destroy(string $id)
     {
-        $notification = auth()->user()
-            ->notifications()
-            ->findOrFail($id);
+        // Get user from multiple guards
+        $user = null;
+        foreach (['customer', 'web', 'admin', 'webmaster'] as $guard) {
+            if (auth()->guard($guard)->check()) {
+                $user = auth()->guard($guard)->user();
+                break;
+            }
+        }
+
+        if (! $user) {
+            return redirect()->route('auth.login');
+        }
+
+        $notification = $user->notifications()->findOrFail($id);
 
         $notification->delete();
 
@@ -66,7 +114,20 @@ class NotificationController extends Controller
 
     public function destroyAll()
     {
-        auth()->user()->notifications()->delete();
+        // Get user from multiple guards
+        $user = null;
+        foreach (['customer', 'web', 'admin', 'webmaster'] as $guard) {
+            if (auth()->guard($guard)->check()) {
+                $user = auth()->guard($guard)->user();
+                break;
+            }
+        }
+
+        if (! $user) {
+            return redirect()->route('auth.login');
+        }
+
+        $user->notifications()->delete();
 
         return back()->with('success', 'All notifications cleared.');
     }
@@ -75,8 +136,21 @@ class NotificationController extends Controller
 
     public function unreadCount()
     {
+        // Get user from multiple guards
+        $user = null;
+        foreach (['customer', 'web', 'admin', 'webmaster'] as $guard) {
+            if (auth()->guard($guard)->check()) {
+                $user = auth()->guard($guard)->user();
+                break;
+            }
+        }
+
+        if (! $user) {
+            return response()->json(['count' => 0]);
+        }
+
         return response()->json([
-            'count' => auth()->user()->unreadNotifications()->count(),
+            'count' => $user->unreadNotifications()->count(),
         ]);
     }
 }

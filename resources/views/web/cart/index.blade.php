@@ -26,6 +26,7 @@
                     <span class="summary-label">Total</span>
                 </div>
                 <a href="{{ route('checkout.index') }}" class="btn-checkout">Proceed To CheckOut</a>
+                
             </div>
         </aside>
 
@@ -113,11 +114,32 @@
                             @endforeach
                         </tbody>
                     </table>
+                    
                 </div>
-
-                {{-- Bottom Section: Coupon + Shipping --}}
+                <br>
+                <div class="coupon-section">
+                        <h5 class="section-title">Apply Coupon</h5>
+                        <p class="section-sub">?Using A Promo Code</p>
+                        @if($cart->promotion)
+                            <div class="promo-applied">
+                                <span>Promo: <strong>{{ $cart->promotion->code }}</strong></span>
+                                <form action="{{ route('cart.remove-promotion') }}" method="POST">
+                                    @csrf @method('DELETE')
+                                    <button type="submit" class="btn-remove-promo">✕</button>
+                                </form>
+                            </div>
+                        @else
+                            <form action="{{ route('cart.apply-promotion') }}" method="POST" class="coupon-form">
+                                @csrf
+                                <button type="submit" class="btn-apply">Apply</button>
+                                <input type="text" name="code" placeholder="Enter Your Coupon" class="coupon-input">
+                            </form>
+                        @endif
+                        
+                    </div>
+                <!-- {{-- Bottom Section: Coupon + Shipping --}}
                 <div class="cart-bottom">
-                    <!-- Your coupon and shipping sections (unchanged) -->
+                
                     {{-- Coupon --}}
                     <div class="coupon-section">
                         <h5 class="section-title">Apply Coupon</h5>
@@ -140,7 +162,7 @@
                     </div>
 
                     {{-- Shipping Calculator --}}
-                    <div class="shipping-section">
+                  
                         <h5 class="section-title">Calculate Shipping</h5>
                         <p class="section-sub">5%: Flat rate</p>
                         <div class="shipping-fields">
@@ -154,23 +176,16 @@
                             <input type="text" placeholder="PostCode / ZIP" class="shipping-input">
                             <input type="text" placeholder="State / Country" class="shipping-input">
                         </div>
-                    </div>
+                    </div> 
                 </div>
                 {{-- Cart Actions --}}
-                <div class="cart-actions">
-                    <button type="button" class="btn-update-cart" onclick="window.location.reload()">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px">
-                            <polyline points="1 4 1 10 7 10"/>
-                            <path d="M3.51 15a9 9 0 1 0 .49-3.36"/>
-                        </svg>
-                        Update cart
-                    </button>
-                    <a href="{{ route('products.index') }}" class="btn-continue">← Continue shopping</a>
-                </div>
+                 -->
 
             @endif
         </main>
     </div>
+
+
 </div>
 @endsection
 

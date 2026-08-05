@@ -78,7 +78,15 @@ class Product extends Model
             ->withPivot('price_adjustment')
             ->withTimestamps();
     }
-
+// Product.php
+public function variantImages()
+{
+    return $this->hasMany(ProductImage::class);
+}
+public function variants()
+{
+    return $this->hasMany(ProductVariant::class);
+}
     public function stock(): HasMany
     {
         return $this->hasMany(Stock::class);

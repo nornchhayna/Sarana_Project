@@ -191,7 +191,7 @@ class AuthController extends Controller
             $request->session()->forget('register_data');
             Auth::login($user);
 
-            return redirect()->intended(route('customer.dashboard'))
+            return redirect()->intended(route('home'))
                 ->with('success', 'Welcome, '.$user->name.'! Your phone is verified.');
         }
 

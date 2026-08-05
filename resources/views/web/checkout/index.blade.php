@@ -111,9 +111,16 @@
                     @foreach($cart->items as $item)
                     <div class="summary-item">
                         <div class="summary-item-img-wrap">
-                            <img src="{{ asset($item->product->image ?? 'default.png') }}"
-                                 alt="{{ $item->product->name }}"
-                                 class="summary-item-img">
+                                   @php
+                                            $imgPath = $item->product->thumbnail ?? 
+                                                       ($item->product->images ? json_decode($item->product->images, true)[0] ?? null : null);
+                                        @endphp
+
+                                        <img src="{{ $imgPath ? asset('storage/' . $imgPath) : asset('images/default-product.png') }}" 
+                                             alt="{{ $item->product->name }}" 
+                                             class="product-thumb"
+                                             onerror="this.src='{{ asset('images/default-product.png') }}';">
+                                        
                             <span class="summary-item-qty">{{ $item->quantity }}</span>
                         </div>
                         <div class="summary-item-info">

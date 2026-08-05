@@ -1,10 +1,6 @@
-{{-- resources/views/home/index.blade.php --}}
 @extends('layouts.app')
-
 @section('title', 'Home')
 @section('meta_description', 'Shop the latest smartphones and accessories at PhoneHub.')
-
-
 
 @section('content')
 
@@ -15,12 +11,8 @@
         @foreach($sliders as $slider)
             <div class="hero-slide {{ $loop->first ? 'hero-slide-active' : '' }}" data-index="{{ $loop->index }}">
                 <section class="hero">
-                    {{-- FIXED BACKGROUND (same on every slide) --}}
-                    <img src="{{ asset('storage/67.jpg') }}" alt="" class="hero-bg-fixed">
-
-                    {{-- SLIDER'S OWN IMAGE, LAYERED ON TOP --}}
+                    <img src="{{ asset('storage/76.jpg') }}" alt="" class="hero-bg-fixed">
                     <img src="{{ asset('storage/' . $slider->image) }}" alt="{{ $slider->title }}" class="hero-slide-img">
-
                     <div class="container relative z-10">
                         <div class="hero__text">
                             @if($slider->badge_text)
@@ -28,20 +20,17 @@
                                     {{ $slider->badge_text }}
                                 </div>
                             @endif
-
                             <h1 class="hero__title">
                                 {{ $slider->title }}
                             </h1>
-
                             @if($slider->subtitle)
                                 <p class="hero__desc">
                                     {{ $slider->subtitle }}
                                 </p>
                             @endif
-
-                            @if($slider->button_text && $slider->button_url)
+                            @if($slider->button_text)
                                 <div class="hero__actions">
-                                    <a href="{{ $slider->button_url }}" class="btn-theme-dark">
+                                    <a href="{{ $slider->button_url ?? '#' }}" class="btn-theme-dark">
                                         {{ $slider->button_text }}
                                     </a>
                                 </div>
@@ -54,6 +43,7 @@
     </div>
 
     @if($sliders->count() > 1)
+
         <button type="button" id="heroPrevBtn" class="hero-nav-btn hero-nav-prev">
             <span class="hero-nav-icon hero-nav-icon-prev"></span>
         </button>
@@ -62,31 +52,35 @@
             <span class="hero-nav-icon hero-nav-icon-next"></span>
         </button>
 
-        {{-- Dots --}}
         <div class="hero-dots" id="heroDots">
             @foreach($sliders as $slider)
-                <button type="button"
-                    class="hero-dot {{ $loop->first ? 'hero-dot-active' : '' }}"
-                    data-index="{{ $loop->index }}"></button>
+                <button type="button" class="hero-dot {{ $loop->first ? 'hero-dot-active' : '' }}"data-index="{{ $loop->index }}"></button>
             @endforeach
         </div>
     @endif
 </div>
 
-
 @endif
 
-{{-- ── BRAND LOGO ROW (Animated Marquee) ── --}}
+{{-- Flash Sale Section --}}
+@if($flashSaleProducts->count())
+@include('layouts.partials.product-carousel', [
+    'products' => $flashSaleProducts,
+    'title' => 'Flash Sale',
+    'sectionId' => 'flash-sale',
+    'viewAllRoute' => route('products.index', ['is_flash_sale' => 1]),
+    'showCountdown' => true,
+])
+@endif
+
 @php
-    $marqueeBrands = \App\Models\Brand::take(8)->get();
+    $marqueeBrands = \App\Models\Brand::take(15)->get();
 @endphp
 
 <div class="brand-row-wrapper">
-    <div class="container-fluid"> 
+    <div class="container-fluid">
         <div class="brand-marquee">
-            <div class="brand-track">
-                
-                {{-- GROUP 1 --}}
+            <div class="brand-track" id="brandTrack">
                 <div class="brand-group">
                     <a href="{{ route('products.index') }}" class="brand-item active" title="All Brands">
                         <span>ALL</span>
@@ -94,7 +88,11 @@
                     @foreach($marqueeBrands as $brand)
                         <a href="{{ route('products.index', ['brand' => $brand->id]) }}" class="brand-item" title="{{ $brand->name }}">
                             @if($brand->logo)
-                                <img src="{{ asset('storage/' . $brand->logo) }}" alt="{{ $brand->name }} logo">
+                                <img src="{{ asset('storage/' . $brand->logo) }}"
+                                     alt="{{ $brand->name }} logo"
+                                     width="120" height="80"
+                                     loading="eager"
+                                     decoding="async">
                             @else
                                 <span>{{ $brand->name }}</span>
                             @endif
@@ -105,21 +103,24 @@
                     </a>
                 </div>
 
-                {{-- GROUP 2 --}}
                 <div class="brand-group" aria-hidden="true">
-                    <a href="{{ route('products.index') }}" class="brand-item active" title="All Brands">
+                    <a href="{{ route('products.index') }}" class="brand-item active" title="All Brands" tabindex="-1">
                         <span>ALL</span>
                     </a>
                     @foreach($marqueeBrands as $brand)
-                        <a href="{{ route('products.index', ['brand' => $brand->id]) }}" class="brand-item" title="{{ $brand->name }}">
+                        <a href="{{ route('products.index', ['brand' => $brand->id]) }}" class="brand-item" title="{{ $brand->name }}" tabindex="-1">
                             @if($brand->logo)
-                                <img src="{{ asset('storage/' . $brand->logo) }}" alt="{{ $brand->name }} logo">
+                                <img src="{{ asset('storage/' . $brand->logo) }}"
+                                     alt=""
+                                     width="120" height="80"
+                                     loading="eager"
+                                     decoding="async">
                             @else
                                 <span>{{ $brand->name }}</span>
                             @endif
                         </a>
                     @endforeach
-                    <a href="{{ route('products.index', ['category' => 'accessories']) }}" class="brand-item" title="Accessories">
+                    <a href="{{ route('products.index', ['category' => 'accessories']) }}" class="brand-item" title="Accessories" tabindex="-1">
                         <span>AUDIO</span>
                     </a>
                 </div>
@@ -129,142 +130,362 @@
     </div>
 </div>
 
-    <section class="ecom-cat-section">
-    <div class="container">
-        
-        {{-- Header & Arrows --}}
-        <div class="ecom-cat-header">
-            <div class="ecom-cat-title-wrap">
-                <h2>Featured Categories</h2>
-                <p>Choose your necessary products from these feature categories.</p>
+@include('layouts.partials.product-carousel', [
+    'products' => $featuredProducts,
+    'title' => __('messages.feature_product'),
+    'sectionId' => 'featured',
+    'viewAllRoute' => route('products.index', ['is_featured' => 1]),
+])
+{{-- ===============================
+    Featured Categories
+================================ --}}
+@include('layouts.partials.product-carousel', [
+    'title' => 'Accessories',
+    'products' => $accessoryProducts,
+    'sectionId' => 'accessories',
+   'viewAllRoute' => route('categories.show', ['slug' => $accessoriesCategory->slug ?? 'accessories']),
+])
+<section class="py-8">
+
+    <div class="max-w-[1280px] mx-auto px-4 ">
+        {{-- Header --}}
+        <div class="flex items-end justify-between mb-7">
+            <div>
+                <h2 class="text-[20px] font-bold text-[#253D4E] mb-1">
+                    Featured Categories
+                </h2>
             </div>
-            
-            {{-- Navigation Arrows --}}
-            <div class="ecom-cat-nav">
-                <button class="ecom-cat-btn" id="cat-prev">
+            {{-- Arrows --}}
+            <div class="flex gap-3">
+                <button id="cat-prev"
+                    class="w-10 h-10 rounded-full bg-white border border-[#ececec] text-[#7E7E7E] flex items-center justify-center transition hover:bg-[#1562c7] hover:text-white hover:border-[#1562c7]">
                     <i class="fa-solid fa-chevron-left"></i>
                 </button>
-                <button class="ecom-cat-btn" id="cat-next">
+
+                <button id="cat-next"
+                    class="w-10 h-10 rounded-full bg-white border border-[#ececec] text-[#7E7E7E] flex items-center justify-center transition hover:bg-[#1562c7] hover:text-white hover:border-[#1562c7]">
                     <i class="fa-solid fa-chevron-right"></i>
                 </button>
             </div>
         </div>
 
-        {{-- The Slider Area --}}
-        <div class="ecom-cat-slider" id="category-slider">
-            
-            {{-- Dynamic Loop for your database categories --}}
+        {{-- Category Slider --}}
+        <div id="category-slider"
+             class="flex gap-5 overflow-x-auto scroll-smooth pb-4 scrollbar-hide">
+
+            {{-- First copy --}}
             @foreach($categories as $category)
-             <a href="{{ route('products.index', ['category' => $category->id]) }}" class="ecom-cat-card">
-                    <div class="ecom-cat-img">
-                        {{-- Make sure to use your actual category image column here --}}
-                        <img src="{{ asset('storage/' . $category->image) }}" alt="{{ $category->name }}">
-                    </div>
-                    <span class="ecom-cat-name">{{ $category->name }}</span>
-                    <span class="ecom-cat-items">{{ $category->products_count ?? 0 }} items</span>
-                </a>
+            <a href="{{ route('products.index',['category'=>$category->id]) }}"
+               class="cat-item flex-none w-[120px] bg-white border border-[#ececec] rounded-[10px] px-3 py-5 text-center transition hover:-translate-y-1 hover:shadow-lg hover:border-[#bce3c9]">
+                <div class="h-[60px] flex items-center justify-center mb-4">
+                    <img
+                        src="{{ asset('storage/'.$category->image) }}"
+                        class="max-h-full max-w-full object-contain">
+                </div>
+                <h3 class="text-sm font-bold text-[#253D4E] leading-tight">
+                    {{ $category->name }}
+                </h3>
+                <p class="text-xs text-[#adadad] mt-1">
+                    {{ $category->products_count ?? 0 }} items
+                </p>
+            </a>
             @endforeach
 
-           
+            {{-- Duplicate copy (enables seamless infinite loop) --}}
+            @foreach($categories as $category)
+            <a href="{{ route('products.index',['category'=>$category->id]) }}"
+               aria-hidden="true" tabindex="-1"
+               class="cat-item flex-none w-[120px] bg-white border border-[#ececec] rounded-[10px] px-3 py-5 text-center transition hover:-translate-y-1 hover:shadow-lg hover:border-[#bce3c9]">
+                <div class="h-[60px] flex items-center justify-center mb-4">
+                    <img
+                        src="{{ asset('storage/'.$category->image) }}"
+                        class="max-h-full max-w-full object-contain">
+                </div>
+                <h3 class="text-sm font-bold text-[#253D4E] leading-tight">
+                    {{ $category->name }}
+                </h3>
+                <p class="text-xs text-[#adadad] mt-1">
+                    {{ $category->products_count ?? 0 }} items
+                </p>
+            </a>
+            @endforeach
         </div>
 
     </div>
 </section>
-<section class="section" style="padding: 20px 0;">
-    {{-- CRITICAL: This container keeps the grid from stretching full width --}}
-    <div class="container"> 
-        
-        {{-- Section Header --}}
-        <div style="display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 24px;">
-            <h2 style="font-size: 22px; font-weight: 700; color: #2B3D5D; margin: 0;">Deals of the Day</h2>
+
+@include('layouts.partials.product-carousel', [
+    'products' => $newProducts,
+    'title' => 'New Arrivals',
+    'sectionId' => 'newarrivals',
+    'viewAllRoute' => route('products.index', ['is_new' => 1]),
+])
+
+@include('layouts.partials.hero-banner')
+
+@include('layouts.partials.product-carousel', [
+    'title' => 'Best Sellers',
+    'products' => $bestSellers,
+    'sectionId' => 'best-sellers',
+    'viewAllRoute' => route('products.index', ['sort' => 'best_selling']),
+])
+@include('layouts.partials.product-carousel', [
+    'products' => $preOrderProducts,
+    'title' => 'Pre-Order',
+    'sectionId' => 'preorder',
+    'viewAllRoute' => route('products.index', ['is_pre_order' => 1]),
+])
+{{-- Trust Bar --}}
+<section class="mt-8">
+    <div class="max-w-[1280px] mx-auto px-4">
+        <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
+            {{-- Free Delivery --}}
+            <div class="flex items-center gap-4 bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+                <div class="text-3xl">
+                    ✈️
+                </div>
+                <div>
+                    <h4 class="font-bold text-gray-800">
+                        Free Delivery
+                    </h4>
+
+                    <p class="text-sm text-gray-500">
+                        From all orders over $10
+                    </p>
+                </div>
+            </div>
+
+            {{-- Support --}}
+            <div class="flex items-center gap-4 bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+
+                <div class="text-3xl">
+                    🎧
+                </div>
+
+                <div>
+                    <h4 class="font-bold text-gray-800">
+                        Support 24/7
+                    </h4>
+
+                    <p class="text-sm text-gray-500">
+                        Shop with an expert
+                    </p>
+                </div>
+
+            </div>
+            {{-- Gift --}}
+            <div class="flex items-center gap-4 bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+
+                <div class="text-3xl">
+                    🎁
+                </div>
+
+                <div>
+                    <h4 class="font-bold text-gray-800">
+                        Gift voucher
+                    </h4>
+
+                    <p class="text-sm text-gray-500">
+                        Refer a friend
+                    </p>
+                </div>
+
+            </div>
+            {{-- Secure Payment --}}
+            <div class="flex items-center gap-4 bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+
+                <div class="text-3xl">
+                    🛡️
+                </div>
+
+                <div>
+                    <h4 class="font-bold text-gray-800">
+                        Secure payment
+                    </h4>
+
+                    <p class="text-sm text-gray-500">
+                        Protected 100%
+                    </p>
+                </div>
+
+            </div>
+
         </div>
 
-        {{-- CRITICAL: This creates the 4-column layout --}}
-        <div class="ecom-products-grid">
-            @foreach($featuredProducts as $product)
-                <div class="ecom-deal-card">
-                    
-                    {{-- Discount Badge --}}
-                    @if($product->sale_price && $product->base_price > $product->sale_price)
-                        @php $discount = round((($product->base_price - $product->sale_price) / $product->base_price) * 100); @endphp
-                        <span class="ecom-deal-badge">-{{ $discount }}%</span>
+    </div>
+
+</section>
+
+{{-- Reviews Section --}}
+<section class="mt-10 py-5">
+
+    <div class="max-w-[1280px] mx-auto px-4">
+        {{-- Header --}}
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+
+            <h2 class="text-2xl font-bold text-gray-800">
+                What Our Customers Say
+            </h2>
+
+            @if($reviewCount > 0)
+
+                <div class="flex items-center gap-2">
+
+                    <span class="text-2xl font-bold text-gray-900">
+                        {{ number_format($averageRating, 1) }}
+                    </span>
+
+
+                    <span class="text-yellow-400 text-lg">
+
+                        @for ($i = 1; $i <= 5; $i++)
+
+                            {{ $i <= round($averageRating) ? '★' : '☆' }}
+
+                        @endfor
+
+                    </span>
+
+
+                    <span class="text-sm text-gray-500">
+                        ({{ $reviewCount }} reviews)
+                    </span>
+
+
+                </div>
+
+            @endif
+
+
+        </div>
+
+        {{-- Reviews Grid --}}
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+            @forelse($latestReviews as $review)
+                <div class="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+                    {{-- User --}}
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold">
+                            {{ strtoupper(substr($review->user->name ?? 'A', 0, 1)) }}
+                        </div>
+                        <span class="font-semibold text-gray-800">
+                            {{ $review->user->name ?? 'Anonymous' }}
+                        </span>
+                    </div>
+                    {{-- Stars --}}
+                    <div class="text-yellow-400 mb-3">
+
+                        @for ($i = 1; $i <= 5; $i++)
+
+                            {{ $i <= $review->rating ? '★' : '☆' }}
+
+                        @endfor
+
+                    </div>
+
+
+
+
+
+                    {{-- Title --}}
+                    @if($review->title)
+
+                        <p class="font-semibold text-sm mb-2">
+                            {{ $review->title }}
+                        </p>
                     @endif
 
-                    {{-- Image --}}
-                    <div class="ecom-deal-img">
-                       <a href="{{ route('products.show', $product->slug) }}">
-                            @if($product->thumbnail)
-                                <img src="{{ asset('storage/' . $product->thumbnail) }}" alt="{{ $product->name }}">
-                            @else
-                                <div style="font-size:60px; color:#D1D5DB;">📦</div>
-                            @endif
-                        </a>
-                    </div>
+                    {{-- Body --}}
+                    @if($review->body)
 
-                   
+                        <p class="text-sm text-gray-600 mb-4">
 
-                    {{-- Product Info --}}
-                    <span class="ecom-deal-brand">{{ $product->brand->name ?? 'Brand' }}</span>
-                    <a href="{{ route('products.show', $product->id) }}" class="ecom-deal-title">{{ $product->name }}</a>
-                    
-                    <div class="ecom-deal-rating">
-                        <span>({{ $product->reviews_count ?? rand(10,50) }})</span>
-                        @php $rating = round($product->avg_rating ?? rand(4,5)); @endphp
-                        @for($i = 1; $i <= 5; $i++)
-                            <i class="fa-solid fa-star {{ $i <= $rating ? '' : 'star-empty' }}"></i>
-                        @endfor
-                    </div>
-<div class="ecom-deal-desc" title="{{ strip_tags($product->description) }}">
-                        {{ strip_tags($product->description) ?? 'No description available for this product.' }}
-                    </div>
-                    <div class="ecom-deal-price">
-                        <span class="ecom-deal-price-current">${{ number_format($product->sale_price ?? $product->base_price, 2) }}</span>
-                        @if($product->sale_price && $product->base_price > $product->sale_price)
-                            <span class="ecom-deal-price-old">${{ number_format($product->base_price, 2) }}</span>
-                        @endif
-                    </div>
+                            {{ Str::limit($review->body, 120) }}
 
-                  {{-- THE SWAP CONTAINER --}}
-                    <div class="ecom-deal-swap-area">
-                        
-                        {{-- 1. Progress Bar --}}
-                        @php
-                            $sold = rand(100, 300); 
-                            $available = rand(50, 200); 
-                            $total = $sold + $available;
-                            $percentage = ($sold / $total) * 100;
-                        @endphp
-                        <div class="ecom-deal-progress-wrap">
-                            <div class="ecom-deal-progress-bar">
-                                <div class="ecom-deal-progress-fill" style="width: {{ $percentage }}%;">
-                                    <div class="ecom-deal-progress-thumb"></div>
-                                </div>
-                            </div>
-                            <div class="ecom-deal-stats">
-                                <div>Sold: <span>{{ $sold }}</span></div>
-                                <div>Available: <span>{{ $available }}</span></div>
-                            </div>
+                        </p>
+
+                    @endif
+
+
+
+
+
+                    {{-- Images --}}
+                    @if($review->images && count($review->images))
+
+                        <div class="flex gap-2 mb-4">
+
+                            @foreach(array_slice($review->images, 0, 3) as $imagePath)
+
+                                <img
+                                    src="{{ Storage::url($imagePath) }}"
+                                    onclick="openLightbox('{{ Storage::url($imagePath) }}')"
+                                    class="w-16 h-16 object-cover rounded-lg cursor-pointer border border-gray-200"
+                                >
+                            @endforeach
                         </div>
-
-                        {{-- 2. Add to Cart Button --}}
-                      <div class="ecom-deal-action-wrapper">
-    <a href="{{ route('products.show', $product->slug) }}" class="ecom-deal-btn-cart">
-        <i class="fa-solid fa-cart-shopping" style="margin-right:8px;"></i>
-        Add to Cart
-    </a>
-</div>
-
+                    @endif
+                    {{-- Footer --}}
+                    <div class="flex justify-between items-center text-xs text-gray-500">
+                        <a
+                            href="{{ route('products.show', $review->product->slug ?? '') }}"
+                            class="text-blue-600 font-semibold hover:underline"
+                        >
+                            {{ Str::limit($review->product->name ?? 'Product', 25) }}
+                        </a>
+                        <span>
+                            {{ $review->created_at->diffForHumans() }}
+                        </span>
                     </div>
-                   
+                </div>
+            @empty
+                <div class="text-gray-500">
+                    No reviews yet.
+                </div>
+            @endforelse
+        </div>
+    </div>
+</section>
 
-                  
-
+{{-- Blog Section --}}
+@if($blogPosts->count())
+<section class="mt-10 py-8">
+    <div class="max-w-[1280px] mx-auto px-4">
+        <div class="flex items-center justify-between mb-6">
+            <h2 class="text-2xl font-bold text-gray-800">Latest Blog Posts</h2>
+            <a href="{{ route('blog.index') }}" class="text-blue-600 hover:underline">View All</a>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            @foreach($blogPosts as $post)
+                <div class="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition">
+                    @if($post->image)
+                        <img src="{{ asset('storage/' . $post->image) }}" alt="{{ $post->title }}" class="w-full h-48 object-cover">
+                    @endif
+                    <div class="p-4">
+                        <h3 class="font-bold text-gray-800 mb-2 line-clamp-2">{{ $post->title }}</h3>
+                        <p class="text-sm text-gray-600 line-clamp-3 mb-3">{{ Str::limit(strip_tags($post->content), 100) }}</p>
+                        <div class="flex items-center justify-between text-xs text-gray-500">
+                            <span>{{ $post->created_at->format('M d, Y') }}</span>
+                            <a href="{{ route('blog.show', $post->slug) }}" class="text-blue-600 hover:underline">Read More</a>
+                        </div>
+                    </div>
                 </div>
             @endforeach
         </div>
     </div>
 </section>
+@endif
+@include('layouts.partials.product-carousel', [
+    'title' => 'Accessories',
+    'products' => $accessoryProducts,
+    'sectionId' => 'accessories',
+    'viewAllRoute' => route('categories.show', ['slug' => $accessoriesCategory->slug ?? 'accessories']),
+])
 
+<div class="image-lightbox" id="image-lightbox" onclick="if(event.target === this) closeLightbox()">
+    <button type="button" class="image-lightbox-close" onclick="closeLightbox()">&times;</button>
+    <img id="lightbox-img" src="" alt="Review image">
+</div>
 @endsection
 
 @push('scripts')
@@ -355,5 +576,130 @@
         startAutoplay();
     }
 })();
+   // Review image lightbox
+function openLightbox(src) {
+    document.getElementById('lightbox-img').src = src;
+    document.getElementById('image-lightbox').classList.add('is-open');
+}
+
+function closeLightbox() {
+    document.getElementById('image-lightbox').classList.remove('is-open');
+}
+
+document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') closeLightbox();
+});
+
+  document.addEventListener('DOMContentLoaded', function () {
+            const track = document.getElementById('brandTrack');
+            if (!track) return;
+
+            const images = track.querySelectorAll('img');
+            let loaded = 0;
+            const total = images.length;
+
+            function setDuration() {
+                // One full group is exactly half the track's scrollWidth
+                const groupWidth = track.scrollWidth / 2;
+                const pixelsPerSecond = 60; // adjust for faster/slower scroll
+                const duration = Math.max(groupWidth / pixelsPerSecond, 10); // min 10s
+                track.style.setProperty('--marquee-duration', duration + 's');
+            }
+
+            if (total === 0) {
+                setDuration();
+                return;
+            }
+
+            images.forEach(img => {
+                if (img.complete) {
+                    loaded++;
+                } else {
+                    img.addEventListener('load', check);
+                    img.addEventListener('error', check);
+                }
+            });
+
+            function check() {
+                loaded++;
+                if (loaded >= total) setDuration();
+            }
+
+            // In case all were already cached/complete
+            if (loaded >= total) setDuration();
+
+            // Recalculate on resize (debounced)
+            let resizeTimer;
+            window.addEventListener('resize', function () {
+                clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(setDuration, 200);
+            });
+        });
+        
+
+          (function () {
+        const track = document.getElementById('category-slider');
+        const prevBtn = document.getElementById('cat-prev');
+        const nextBtn = document.getElementById('cat-next');
+
+        const STEP_INTERVAL = 10000; // advance one card every 10 seconds
+        let loopWidth = 0;           // width of ONE full set of items (half of total, since duplicated)
+        let cardStep = 0;            // width of a single card + gap
+        let timer = null;
+
+        function measure() {
+            loopWidth = track.scrollWidth / 2;
+            const items = track.querySelectorAll('.cat-item');
+            if (items.length > 1) {
+                cardStep = items[1].offsetLeft - items[0].offsetLeft;
+            } else if (items.length === 1) {
+                cardStep = items[0].offsetWidth;
+            }
+        }
+
+        function stepForward() {
+            track.scrollBy({ left: cardStep, behavior: 'smooth' });
+
+            // once we've scrolled past one full set, snap back invisibly
+            // (works because the list is duplicated, so position 0 and
+            // position loopWidth look identical)
+            setTimeout(() => {
+                if (track.scrollLeft >= loopWidth) {
+                    track.scrollLeft -= loopWidth;
+                }
+            }, 500); // matches the smooth-scroll transition time
+        }
+
+        function startTimer() {
+            clearInterval(timer);
+            timer = setInterval(stepForward, STEP_INTERVAL);
+        }
+
+        function stopTimer() {
+            clearInterval(timer);
+        }
+
+        // Pause while user hovers or touches the slider, resume after they leave
+        track.addEventListener('mouseenter', stopTimer);
+        track.addEventListener('mouseleave', startTimer);
+        track.addEventListener('touchstart', stopTimer, { passive: true });
+        track.addEventListener('touchend', () => setTimeout(startTimer, 1500));
+
+        // Manual arrow buttons: scroll one card, then reset the 10s timer
+        prevBtn.addEventListener('click', () => {
+            track.scrollBy({ left: -cardStep, behavior: 'smooth' });
+            startTimer();
+        });
+
+        nextBtn.addEventListener('click', () => {
+            stepForward();
+            startTimer();
+        });
+
+        window.addEventListener('resize', measure);
+
+        measure();
+        startTimer();
+    })();
     </script>
 @endpush

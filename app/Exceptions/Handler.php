@@ -24,7 +24,6 @@ class Handler extends ExceptionHandler
             }
         });
     }
-
     private function handleApiException(Throwable $e, $request)
     {
         if ($e instanceof AuthenticationException) {

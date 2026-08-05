@@ -12,7 +12,7 @@ use App\Models\Merchantbakongkhqr;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Payment;
-use App\Models\Stock;
+use App\Models\ProductVariant;
 use App\Services\BakongKHQRService;
 use App\Services\OrderFulfillmentService;
 use Illuminate\Http\Request;
@@ -28,11 +28,6 @@ class CheckoutController extends Controller
         $this->middleware('auth');
     }
 
-    // -------------------------------------------------------------------------
-    // Resolve Bakong merchant model dynamically.
-    // Tries common model names used across different projects.
-    // Returns null if none found — KHQR will fall back to env config.
-    // -------------------------------------------------------------------------
     private function getBakongMerchant(): ?object
     {
         $candidates = [
@@ -52,19 +47,6 @@ class CheckoutController extends Controller
         return null;
     }
 
-    // -------------------------------------------------------------------------
-    // Resolve which KHQR type to generate: 'individual' (default, confirmed
-    // working with Wing) or 'merchant' (experimental — see
-    // BakongKHQRService::generateKHQRMerchant() docblock).
-    //
-    // Pass ?qr_type=merchant on either the checkout POST or the payment GET
-    // to force the merchant-shaped QR for that request, e.g.:
-    //   /checkout/{order}/payment?qr_type=merchant
-    //
-    // This does NOT change which account receives funds — only the QR's
-    // internal shape (IndividualInfo vs MerchantInfo) — so it's safe to
-    // test against real orders.
-    // -------------------------------------------------------------------------
     private function resolveQrType(Request $request): string
     {
         $type = $request->query('qr_type', $request->input('qr_type'));
@@ -72,9 +54,7 @@ class CheckoutController extends Controller
         return $type === 'merchant' ? 'merchant' : 'individual';
     }
 
-    // -------------------------------------------------------------------------
     // Helper: build KHQR data — tries DB merchant first, falls back to env
-    // -------------------------------------------------------------------------
     private function buildKhqr(Order $order, string $qrType = 'individual'): array
     {
         $bakong = $this->getBakongMerchant();
@@ -123,9 +103,6 @@ class CheckoutController extends Controller
             ->first();
     }
 
-    // -------------------------------------------------------------------------
-    // GET /checkout — show checkout form
-    // -------------------------------------------------------------------------
     public function index()
     {
         $cart = Cart::with(['items.product.brand', 'items.color', 'items.storage', 'promotion'])
@@ -142,9 +119,6 @@ class CheckoutController extends Controller
         return view('web.checkout.index', compact('cart', 'user', 'bakong'));
     }
 
-    // -------------------------------------------------------------------------
-    // POST /checkout — place order + generate KHQR
-    // -------------------------------------------------------------------------
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -166,12 +140,12 @@ class CheckoutController extends Controller
 
         // ── Stock check BEFORE writing anything ──────────────────────────────
         foreach ($cart->items as $item) {
-            $stock = Stock::where('product_id', $item->product_id)
+            $variant = ProductVariant::where('product_id', $item->product_id)
                 ->where('color_id', $item->color_id)
                 ->where('phone_storage_id', $item->phone_storage_id)
                 ->first();
 
-            if (! $stock || $stock->quantity < $item->quantity) {
+            if (! $variant || $variant->stock < $item->quantity) {
                 return back()->with(
                     'error',
                     "Insufficient stock for {$item->product->name}. Please update your cart."
@@ -224,18 +198,18 @@ class CheckoutController extends Controller
             // ── Order items (no stock change until paid) ────────────────────────
             foreach ($cart->items as $item) {
                 $lineTotal = $item->unit_price * $item->quantity;
-OrderItem::create([
-    'order_id'         => $order->id,
-    'product_id'       => $item->product_id,
-    'color_id'         => $item->color_id,
-    'phone_storage_id' => $item->phone_storage_id,
-    'product_name'     => $item->product->name,
-    'color_name'       => $item->color?->name,
-    'storage_capacity' => $item->storage?->capacity,
-    'quantity'         => $item->quantity,
-    'unit_price'       => $item->unit_price,
-    'subtotal'         => $lineTotal,
-]);
+                OrderItem::create([
+                    'order_id' => $order->id,
+                    'product_id' => $item->product_id,
+                    'color_id' => $item->color_id,
+                    'phone_storage_id' => $item->phone_storage_id,
+                    'product_name' => $item->product->name,
+                    'color_name' => $item->color?->name,
+                    'storage_capacity' => $item->storage?->capacity,
+                    'quantity' => $item->quantity,
+                    'unit_price' => $item->unit_price,
+                    'subtotal' => $lineTotal,
+                ]);
             }
 
             // ── Invoice ───────────────────────────────────────────────────────
@@ -278,9 +252,6 @@ OrderItem::create([
             ->with('khqr_data', $khqrData);
     }
 
-    // -------------------------------------------------------------------------
-    // GET /checkout/{order}/payment — QR payment page
-    // -------------------------------------------------------------------------
     public function payment(Request $request, Order $order)
     {
         abort_unless($order->user_id === auth()->id(), 403);
@@ -302,10 +273,6 @@ OrderItem::create([
         $qrType = $this->resolveQrType($request);
         $khqrData = session('khqr_data');
 
-        // Regenerate when: session is empty/missing a qr_string, OR the
-        // caller explicitly asked for a different qr_type than what's
-        // cached (e.g. you append ?qr_type=merchant to an existing order's
-        // payment URL to force a fresh merchant-shaped QR for testing).
         $cachedType = $khqrData['qr_type'] ?? 'individual';
         $needsRegen = empty($khqrData) || empty($khqrData['qr_string']) || $cachedType !== $qrType;
 
@@ -332,9 +299,6 @@ OrderItem::create([
         return view('web.payment.index', compact('order', 'khqrData', 'bakong'));
     }
 
-    // -------------------------------------------------------------------------
-    // GET /checkout/{order}/payment/status  (JSON — polled by JS every 4 s)
-    // -------------------------------------------------------------------------
     public function paymentStatus(Order $order)
     {
         abort_unless($order->user_id === auth()->id(), 403);
@@ -392,9 +356,6 @@ OrderItem::create([
         ]);
     }
 
-    // -------------------------------------------------------------------------
-    // POST /checkout/{order}/payment/cancel — user leaves without paying
-    // -------------------------------------------------------------------------
     public function cancelPayment(Order $order)
     {
         abort_unless($order->user_id === auth()->id(), 403);
@@ -415,13 +376,8 @@ OrderItem::create([
         ]);
     }
 
-    // -------------------------------------------------------------------------
-    // POST /webhooks/bakong — NBC pushes payment confirmation here
-    // (exclude this route from CSRF in VerifyCsrfToken::$except)
-    // -------------------------------------------------------------------------
     public function bakongWebhook(Request $request)
     {
-        // NBC sends externalRef matching the billNumber we set (= order_number)
         $externalRef = $request->input('externalRef')
                     ?? $request->input('payment_reference')
                     ?? $request->input('ref');

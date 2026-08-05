@@ -7,7 +7,7 @@ class CurrencyHelper
     public static function format(float $amount, string $currency = 'USD'): string
     {
         return match ($currency) {
-            'KHR' => number_format($amount, 0).' ៛',
+            'KHR' => number_format($amount, 0).' $',
             default => '$'.number_format($amount, 2),
         };
     }

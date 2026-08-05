@@ -27,8 +27,9 @@ class AdminSliderController extends Controller
             'title' => 'nullable|string|max:255',
             'subtitle' => 'nullable|string',
             'image' => 'required|image|max:4096',
-            'link' => 'nullable|url|max:500',
+            'button_url' => 'nullable|url|max:500',
             'button_text' => 'nullable|string|max:100',
+            'badge_text' => 'nullable|string|max:100',
             'sort_order' => 'nullable|integer|min:0|max:255',
             'is_active' => 'boolean',
         ]);
@@ -52,8 +53,9 @@ class AdminSliderController extends Controller
             'title' => 'nullable|string|max:255',
             'subtitle' => 'nullable|string',
             'image' => 'nullable|image|max:4096',
-            'link' => 'nullable|url|max:500',
+            'button_url' => 'nullable|url|max:500',
             'button_text' => 'nullable|string|max:100',
+            'badge_text' => 'nullable|string|max:100',
             'sort_order' => 'nullable|integer|min:0|max:255',
             'is_active' => 'boolean',
         ]);

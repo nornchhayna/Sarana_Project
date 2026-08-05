@@ -70,10 +70,10 @@
                         <div style="color: var(--text-1); font-weight: 600;">{{ $product->name }}</div>
                         <div class="prod-sku">{{ $product->sku }}</div>
                     </td>
-                    <td>{{ $product->category->name }}</td>
-                    <td>{{ $product->brand->name }}</td>
+                    <td style="font-family: var(--mono); color: var(--text-1);">{{ $product->category->name }}</td>
+                    <td style="font-family: var(--mono); color: var(--text-1);">{{ $product->brand->name }}</td>
                     <td style="font-family: var(--mono); color: var(--text-1);">${{ number_format($product->base_price, 2) }}</td>
-                    <td style="font-family: var(--mono); color: var(--accent-2);">
+                    <td style="font-family: var(--mono); color: var(--accent-1);">
                         {{ $product->sale_price ? '$'.number_format($product->sale_price,2) : '—' }}
                     </td>
                     <td>

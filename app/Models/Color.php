@@ -16,7 +16,14 @@ class Color extends Model
     {
         return $this->hasMany(ProductColor::class);
     }
-
+public function productImages()
+{
+    return $this->hasMany(ProductImage::class);
+}
+public function variants()
+{
+    return $this->hasMany(ProductVariant::class);
+}
     public function products(): BelongsToMany
     {
         return $this->belongsToMany(Product::class, 'product_colors')

@@ -41,9 +41,9 @@
             </div>
 
             <div class="mb-3">
-                <label for="link" class="form-label">Link URL</label>
-                <input type="url" name="link" id="link" class="form-control @error('link') is-invalid @enderror" value="{{ old('link') }}" placeholder="https://example.com">
-                @error('link')
+                <label for="button_url" class="form-label">Button URL</label>
+                <input type="url" name="button_url" id="button_url" class="form-control @error('button_url') is-invalid @enderror" value="{{ old('button_url') }}" placeholder="https://example.com">
+                @error('button_url')
                     <div class="invalid-feedback">{{ $message }}</div>
                 @enderror
             </div>
@@ -52,6 +52,14 @@
                 <label for="button_text" class="form-label">Button Text</label>
                 <input type="text" name="button_text" id="button_text" class="form-control @error('button_text') is-invalid @enderror" value="{{ old('button_text') }}">
                 @error('button_text')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
+            </div>
+
+            <div class="mb-3">
+                <label for="badge_text" class="form-label">Badge Text</label>
+                <input type="text" name="badge_text" id="badge_text" class="form-control @error('badge_text') is-invalid @enderror" value="{{ old('badge_text') }}">
+                @error('badge_text')
                     <div class="invalid-feedback">{{ $message }}</div>
                 @enderror
             </div>

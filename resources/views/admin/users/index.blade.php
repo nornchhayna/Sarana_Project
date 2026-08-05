@@ -113,17 +113,17 @@
                         <a href="{{ route('admin.users.show', $user) }}" class="btn-action" title="View Profile Telemetry">
                             <i class="fa-solid fa-user-gear"></i>
                         </a>
-                        <a href="{{ route('admin.users.edit', $user) }}" class="btn-action" title="Modify Details">
+                        <!-- <a href="{{ route('admin.users.edit', $user) }}" class="btn-action" title="Modify Details">
                             <i class="fa-solid fa-pen-to-square"></i>
-                        </a>
+                        </a> -->
                         
                         @if($user->id !== auth()->id())
                             {{-- Hidden Form Elements Map for Loop Submissions --}}
-@foreach($users as $user)
-    <form id="ban-form-{{ $user->id }}" action="{{ route('admin.users.ban', $user) }}" method="POST" style="display:none;">@csrf @method('PATCH')</form>
-    <form id="unban-form-{{ $user->id }}" action="{{ route('admin.users.unban', $user) }}" method="POST" style="display:none;">@csrf @method('PATCH')</form>
-    <form id="delete-form-{{ $user->id }}" action="{{ route('admin.users.destroy', $user) }}" method="POST" style="display:none;">@csrf @method('DELETE')</form>
-@endforeach
+        @foreach($users as $user)
+             <form id="ban-form-{{ $user->id }}" action="{{ route('admin.users.ban', $user) }}" method="POST" style="display:none;">@csrf @method('PATCH')</form>
+             <form id="unban-form-{{ $user->id }}" action="{{ route('admin.users.unban', $user) }}" method="POST" style="display:none;">@csrf @method('PATCH')</form>
+             <form id="delete-form-{{ $user->id }}" action="{{ route('admin.users.destroy', $user) }}" method="POST" style="display:none;">@csrf @method('DELETE')</form>
+        @endforeach
                             <form method="POST" action="{{ route('admin.users.destroy', $user) }}" onsubmit="return confirm('Permanently wipe this user profile account configuration? This action cannot be reversed.')" style="margin: 0;">
                                 @csrf @method('DELETE')
                                 <button class="btn-action delete" title="Purge Profile Account">

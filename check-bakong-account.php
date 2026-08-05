@@ -72,8 +72,9 @@ foreach ($fieldNameVariants as $fieldName) {
     $result = callCheckAccount($url, $token, $fieldName, $accountId);
 
     if ($result['curlError']) {
-        echo "  cURL ERROR: {$result['curlError']}\n";
-        echo "  (If you're outside Cambodia, the Bakong API may block your IP. See README notes about Bakong Relay / RBK tokens as a workaround.)\n";
+
+        echo "   cURL ERROR: {$result['curlError']}\n";
+        echo "   (If you're outside Cambodia, the Bakong API may block your IP. See README notes about Bakong Relay / RBK tokens as a workaround.)\n";
 
         continue;
     }

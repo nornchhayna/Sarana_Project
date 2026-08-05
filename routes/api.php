@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\PromotionApiController;
 use App\Http\Controllers\Api\ReviewApiController;
 use App\Http\Controllers\Api\SliderApiController;
 use App\Http\Controllers\Api\WishlistApiController;
+use App\Http\Controllers\API\ProductVariantController;
 use Illuminate\Support\Facades\Route;
 
 // ─────────────────────────────────────────────
@@ -46,6 +47,10 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
     Route::get('/products', [ProductApiController::class, 'index'])->name('products.index');
     Route::get('/products/{product}', [ProductApiController::class, 'show'])->name('products.show');
     Route::get('/products/{product}/reviews', [ReviewApiController::class, 'index'])->name('products.reviews.index');
+
+    // Product Variants
+    Route::get('/product-variant', [ProductVariantController::class, 'show'])->name('product-variant.show');
+    Route::get('/product-variants', [ProductVariantController::class, 'index'])->name('product-variants.index');
 
     // ─────────────────────────────────────────────
     //  Authenticated API routes

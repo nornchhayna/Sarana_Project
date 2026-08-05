@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -53,7 +54,25 @@ class User extends Authenticatable
     {
         return $query->where('is_active', true);
     }
+    // app/Models/User.php
 
+    public function contacts()
+    {
+        return $this->hasMany(Contact::class);
+    }
+
+    public function unseenReplies()
+    {
+        return $this->contacts()
+            ->where('status', 'replied')
+            ->where('is_seen_by_customer', false)
+            ->latest('replied_at');
+    }
+
+    public function unseenRepliesCount()
+    {
+        return $this->unseenReplies()->count();
+    }
     /* ── Role helpers ── */
 
     public function isAdmin(): bool
@@ -112,5 +131,20 @@ class User extends Authenticatable
     public function hasPhone(): bool
     {
         return ! is_null($this->phone) && $this->phone !== '';
+    }
+
+    public function orders(): HasMany
+    {
+        return $this->hasMany(Order::class);
+    }
+
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(Review::class);
+    }
+
+    public function wishlists(): HasMany
+    {
+        return $this->hasMany(Wishlist::class);
     }
 }

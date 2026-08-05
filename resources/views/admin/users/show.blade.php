@@ -66,7 +66,7 @@
                 </div>
 
                 <div style="margin-top: 24px; border-top: 1px dashed var(--border); padding-top: 16px;">
-                    <a href="{{ route('admin.users.edit', $user) }}" class="btn btn-primary"><i class="fa-solid fa-user-pen"></i> Edit Profile Fields</a>
+                    <!-- <a href="{{ route('admin.users.edit', $user) }}" class="btn btn-primary"><i class="fa-solid fa-user-pen"></i> Edit Profile Fields</a> -->
                     @if($user->id !== auth()->id())
                         <form method="POST" action="{{ route('admin.users.toggleStatus', $user) }}">
                             @csrf @method('PATCH')

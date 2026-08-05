@@ -15,6 +15,21 @@ class ReviewController extends Controller
         $this->middleware('auth');
     }
 
+    public function index()
+    {
+        $reviews = Review::where('user_id', auth()->id())->get();
+
+        return view('web.reviews.index', compact('reviews'));
+    }
+
+    public function create(Product $product, Request $request)
+    {
+        // Optional: pass order_id through if you still need purchase verification on the create page
+        return view('web.reviews.create', [
+            'product' => $product,
+            'orderId' => $request->query('order_id'),
+        ]);
+    }
     // ─── Submit a review ────────────────────────────────────────────────────
 
     public function store(Request $request, Product $product)
@@ -27,7 +42,7 @@ class ReviewController extends Controller
             'images' => 'nullable|array|max:5',
             'images.*' => 'image|max:2048',
         ]);
-
+        // dd($request->hasFile('images'), $request->file('images'));
         // Ensure the customer actually purchased this product (if order is provided)
         if (! empty($validated['order_id'])) {
             $purchased = Order::where('id', $validated['order_id'])
@@ -69,20 +84,20 @@ class ReviewController extends Controller
             'is_approved' => false, // pending admin approval
         ]);
         // Ensure the customer actually purchased this product (if order is provided)
-if (! empty($validated['order_id'])) {
-    $order = Order::where('id', $validated['order_id'])
-        ->where('user_id', auth()->id())
-        ->whereHas('items', fn ($q) => $q->where('product_id', $product->id))
-        ->first();
+        if (! empty($validated['order_id'])) {
+            $order = Order::where('id', $validated['order_id'])
+                ->where('user_id', auth()->id())
+                ->whereHas('items', fn ($q) => $q->where('product_id', $product->id))
+                ->first();
 
-    if (! $order) {
-        return back()->with('error', 'You can only review products you have purchased.');
-    }
+            if (! $order) {
+                return back()->with('error', 'You can only review products you have purchased.');
+            }
 
-    if ($order->status !== 'delivered') {
-        return back()->with('error', 'You can review this product once your order has been delivered.');
-    }
-}
+            if ($order->status !== 'delivered') {
+                return back()->with('error', 'You can review this product once your order has been delivered.');
+            }
+        }
 
         // Recalculate avg_rating for the product
         $this->updateProductRating($product);

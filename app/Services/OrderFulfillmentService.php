@@ -4,7 +4,7 @@ namespace App\Services;
 
 use App\Models\Order;
 use App\Models\Payment;
-use App\Models\Stock;
+use App\Models\ProductVariant;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
@@ -31,22 +31,22 @@ class OrderFulfillmentService
             $order->load('items.product');
 
             foreach ($order->items as $item) {
-                $stock = Stock::where('product_id', $item->product_id)
+                $variant = ProductVariant::where('product_id', $item->product_id)
                     ->where('color_id', $item->color_id)
                     ->where('phone_storage_id', $item->phone_storage_id)
                     ->lockForUpdate()
                     ->first();
 
-                if (! $stock || $stock->quantity < $item->quantity) {
+                if (! $variant || $variant->stock < $item->quantity) {
                     throw new RuntimeException("Insufficient stock for {$item->product_name}.");
                 }
             }
 
             foreach ($order->items as $item) {
-                Stock::where('product_id', $item->product_id)
+                ProductVariant::where('product_id', $item->product_id)
                     ->where('color_id', $item->color_id)
                     ->where('phone_storage_id', $item->phone_storage_id)
-                    ->decrement('quantity', $item->quantity);
+                    ->decrement('stock', $item->quantity);
 
                 $item->product?->increment('total_sold', $item->quantity);
             }
@@ -92,10 +92,10 @@ class OrderFulfillmentService
         $order->load('items.product');
 
         foreach ($order->items as $item) {
-            Stock::where('product_id', $item->product_id)
+            ProductVariant::where('product_id', $item->product_id)
                 ->where('color_id', $item->color_id)
                 ->where('phone_storage_id', $item->phone_storage_id)
-                ->increment('quantity', $item->quantity);
+                ->increment('stock', $item->quantity);
 
             $item->product?->decrement('total_sold', $item->quantity);
         }

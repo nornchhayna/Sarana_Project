@@ -1,4 +1,4 @@
-
+/* 
 
 /* ===== CART PAGE ===== */
 .cart-page {
@@ -75,7 +75,7 @@
     display: block;
     width: 100%;
     margin-top: 18px;
-    background: #2d3a6e;
+    background: #0056b3;
     color: #fff;
     text-align: center;
     padding: 13px 0;
@@ -233,7 +233,7 @@
     background: none;
     border: none;
     font-size: 16px;
-    color: #3a3a4a;
+    color: #0056b3;
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -309,7 +309,7 @@
 .btn-update-cart {
     display: inline-flex;
     align-items: center;
-    background: #2d3a6e;
+    background: #0056b3;
     color: #fff;
     border: none;
     padding: 11px 22px;
@@ -326,7 +326,7 @@
 .btn-continue {
     display: inline-flex;
     align-items: center;
-    background: #2d3a6e;
+    background: #0056b3;
     color: #fff;
     padding: 11px 22px;
     border-radius: 8px;
@@ -380,7 +380,7 @@
 }
 
 .btn-apply {
-    background: #2d3a6e;
+    background: #0056b3;
     color: #fff;
     border: none;
     padding: 10px 20px;
@@ -498,4 +498,4 @@
             flex-direction: column;
             gap: 10px;
         }
-    }
+    } */

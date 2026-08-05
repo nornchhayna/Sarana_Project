@@ -3,8 +3,6 @@
 @section('title', isset($product) ? 'Edit Product' : 'Create Product')
 @section('page-title', isset($product) ? 'Edit Product' : 'New Product')
 
-
-
 @section('content')
 <form method="POST"
       action="{{ $product->exists ? route('admin.products.update', $product) : route('admin.products.store') }}"
@@ -13,20 +11,20 @@
     @if($product->exists) @method('PUT') @endif
 
     <div class="form-layout">
-        
+
         {{-- ── LEFT COLUMN ── --}}
         <div class="main-col">
-            
+
             {{-- Basic Info --}}
             <div class="admin-card">
                 <div class="admin-card-header"><i class="fa-solid fa-circle-info" style="color: var(--text-3);"></i> Basic Information</div>
                 <div class="admin-card-body">
-                    
+
                     <div class="form-group">
                         <label class="form-label">Product Name <span class="text-danger">*</span></label>
                         <input type="text" name="name" value="{{ old('name', $product->name ?? '') }}" class="form-control" placeholder="e.g. Apple iPhone 15 Pro Max" required>
                     </div>
-                    
+
                     <div class="form-row">
                         <div>
                             <label class="form-label">SKU <span class="text-danger">*</span></label>
@@ -37,12 +35,12 @@
                             <input type="text" name="slug" value="{{ old('slug', $product->slug ?? '') }}" class="form-control font-mono" placeholder="Auto-generated if blank">
                         </div>
                     </div>
-                    
+
                     <div class="form-group">
                         <label class="form-label">Description</label>
                         <textarea name="description" class="form-control" placeholder="Detailed product description...">{{ old('description', $product->description ?? '') }}</textarea>
                     </div>
-                    
+
                     <div class="form-group" style="margin-bottom: 0;">
                         <label class="form-label">Specifications (JSON or text)</label>
                         <textarea name="specifications" class="form-control font-mono" placeholder='{"Screen": "6.7 inch", "Camera": "48MP"}'>{{ old('specifications', $product->specifications ?? '') }}</textarea>
@@ -55,7 +53,7 @@
             <div class="admin-card">
                 <div class="admin-card-header"><i class="fa-solid fa-tag" style="color: var(--text-3);"></i> Pricing</div>
                 <div class="admin-card-body form-row-3" style="margin-bottom: 0;">
-                    
+
                     <div>
                         <label class="form-label">Base Price <span class="text-danger">*</span></label>
                         <div class="input-group">
@@ -63,7 +61,7 @@
                             <input type="number" name="base_price" value="{{ old('base_price', $product->base_price ?? '') }}" step="0.01" min="0" class="form-control with-left" required>
                         </div>
                     </div>
-                    
+
                     <div>
                         <label class="form-label">Sale Price</label>
                         <div class="input-group">
@@ -71,7 +69,7 @@
                             <input type="number" name="sale_price" value="{{ old('sale_price', $product->sale_price ?? '') }}" step="0.01" min="0" class="form-control with-left">
                         </div>
                     </div>
-                    
+
                     <div>
                         <label class="form-label">Discount %</label>
                         <div class="input-group">
@@ -85,9 +83,9 @@
 
             {{-- Variants --}}
             <div class="admin-card">
-                <div class="admin-card-header"><i class="fa-solid fa-layer-group" style="color: var(--text-3);"></i> Variants</div>
+                <div class="admin-card-header"><i class="fa-solid fa-layer-group" style="color: var(--text-3);"></i> Product Variants</div>
                 <div class="admin-card-body">
-                    
+
                     <div class="form-group">
                         <label class="form-label">Available Colors</label>
                         <div class="checkbox-grid">
@@ -105,8 +103,8 @@
                             @endforeach
                         </div>
                     </div>
-                    
-                    <div class="form-group" style="margin-bottom: 0;">
+
+                    <div class="form-group">
                         <label class="form-label">Storage Options</label>
                         <div class="checkbox-grid">
                             @foreach($storages as $storage)
@@ -119,18 +117,48 @@
                         </div>
                     </div>
 
+                    <div class="form-group">
+                        <label class="form-label">Price by Storage</label>
+                        <p class="text-muted" style="font-size: 13px; margin-bottom: 10px;">
+                            Set one price per storage size — it applies to every color at that storage.
+                        </p>
+                        <div id="storage-prices-container" style="display: none;">
+                            <!-- Storage price inputs will be dynamically added here -->
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label">Variant Details</label>
+                        <p class="text-muted" style="font-size: 13px; margin-bottom: 10px;">
+                            Stock and SKU for each color + storage combination. Price is set above, per storage.
+                        </p>
+                        <div id="variants-container" style="display: none;">
+                            <!-- Variants will be dynamically added here -->
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="margin-top: 20px;">
+                        <label class="form-label">Color Images</label>
+                        <p class="text-muted" style="font-size: 13px; margin-bottom: 10px;">
+                            Upload 1 image for each color.
+                        </p>
+                        <div id="color-images-container" style="display: none;">
+                            <!-- Color image upload sections will be dynamically added here -->
+                        </div>
+                    </div>
+
                 </div>
             </div>
         </div>
 
         {{-- ── RIGHT COLUMN ── --}}
         <div class="side-col">
-            
+
             {{-- Publish Settings --}}
             <div class="admin-card">
                 <div class="admin-card-header"><i class="fa-solid fa-rocket" style="color: var(--accent-4);"></i> Publish</div>
                 <div class="admin-card-body">
-                    
+
                     @foreach([
                         ['is_active',   'Active (Visible on store)'],
                         ['is_featured', 'Featured Product'],
@@ -159,7 +187,7 @@
             <div class="admin-card">
                 <div class="admin-card-header"><i class="fa-solid fa-folder-tree" style="color: var(--text-3);"></i> Organization</div>
                 <div class="admin-card-body">
-                    
+
                     <div class="form-group">
                         <label class="form-label">Category <span class="text-danger">*</span></label>
                         <select name="category_id" class="form-select" required>
@@ -169,7 +197,7 @@
                             @endforeach
                         </select>
                     </div>
-                    
+
                     <div class="form-group">
                         <label class="form-label">Brand <span class="text-danger">*</span></label>
                         <select name="brand_id" class="form-select" required>
@@ -179,17 +207,17 @@
                             @endforeach
                         </select>
                     </div>
-                    
+
                     <div class="form-group">
-                        <label class="form-label">Phone Model <span class="text-danger">*</span></label>
-                        <select name="phone_model_id" class="form-select" required>
+                        <label class="form-label">Phone Model</label>
+                        <select name="phone_model_id" class="form-select">
                             <option value="">Select Model…</option>
                             @foreach($phoneModels as $model)
                                 <option value="{{ $model->id }}" @selected(old('phone_model_id', $product->phone_model_id ?? '') == $model->id)>{{ $model->brand->name }} {{ $model->name }}</option>
                             @endforeach
                         </select>
                     </div>
-                    
+
                     <div class="form-group" style="margin-bottom: 0;">
                         <label class="form-label">Sort Order</label>
                         <input type="number" name="sort_order" value="{{ old('sort_order', $product->sort_order ?? 0) }}" class="form-control font-mono" placeholder="0">
@@ -202,7 +230,7 @@
             <div class="admin-card">
                 <div class="admin-card-header"><i class="fa-solid fa-images" style="color: var(--text-3);"></i> Media</div>
                 <div class="admin-card-body">
-                    
+
                     <label class="form-label">Main Thumbnail</label>
                     <div class="image-preview-wrapper" id="thumbnail-preview-container">
                         @if(isset($product) && $product->thumbnail)
@@ -238,13 +266,192 @@
             reader.onload = function(e) {
                 const previewImg = document.getElementById('thumbnail-preview');
                 const icon = document.getElementById('thumbnail-icon');
-                
+
                 previewImg.src = e.target.result;
                 previewImg.style.display = 'block';
                 if(icon) icon.style.display = 'none';
             }
             reader.readAsDataURL(file);
         }
+    });
+
+    // Dynamic Variant Generation
+    document.addEventListener('DOMContentLoaded', function() {
+        const colorCheckboxes = document.querySelectorAll('input[name="colors[]"]');
+        const storageCheckboxes = document.querySelectorAll('input[name="storages[]"]');
+        const variantsContainer = document.getElementById('variants-container');
+        const storagePricesContainer = document.getElementById('storage-prices-container');
+
+        function getSelectedStorages() {
+            return Array.from(storageCheckboxes)
+                .filter(cb => cb.checked)
+                .map(cb => ({
+                    id: cb.value,
+                    name: cb.closest('.check-item').querySelector('.check-label').textContent.trim()
+                }));
+        }
+
+        function getSelectedColors() {
+            return Array.from(colorCheckboxes)
+                .filter(cb => cb.checked)
+                .map(cb => ({
+                    id: cb.value,
+                    name: cb.closest('.check-item').querySelector('.check-label').textContent.trim()
+                }));
+        }
+
+        // One price input per selected storage size — applies to every color at that storage
+        function generateStoragePrices() {
+            console.log('generateStoragePrices called');
+            const selectedStorages = getSelectedStorages();
+            console.log('Selected storages:', selectedStorages);
+
+            if (selectedStorages.length === 0) {
+                console.log('No storages selected, hiding container');
+                storagePricesContainer.style.display = 'none';
+                storagePricesContainer.innerHTML = '';
+                return;
+            }
+
+            // Preserve prices already typed in before regenerating
+            const existingValues = {};
+            storagePricesContainer.querySelectorAll('[data-storage-price]').forEach(input => {
+                existingValues[input.dataset.storagePrice] = input.value;
+            });
+
+            console.log('Showing storage prices container');
+            storagePricesContainer.style.display = 'block';
+            storagePricesContainer.innerHTML = '';
+
+            selectedStorages.forEach(storage => {
+                console.log('Creating price input for storage:', storage.name);
+                const row = document.createElement('div');
+                row.style.cssText = 'display: flex; align-items: center; gap: 10px; margin-bottom: 8px;';
+                row.innerHTML = `
+                    <div style="flex: 0 0 100px; font-weight: 600; font-size: 13px;">${storage.name}</div>
+                    <div class="input-group" style="max-width: 180px;">
+                        <span class="input-text left">$</span>
+                        <input type="number" step="0.01" min="0" class="form-control with-left"
+                               placeholder="0.00" data-storage-price="${storage.id}"
+                               value="${existingValues[storage.id] || ''}" required>
+                    </div>
+                `;
+                storagePricesContainer.appendChild(row);
+            });
+
+            storagePricesContainer.querySelectorAll('[data-storage-price]').forEach(input => {
+                input.addEventListener('input', generateVariants);
+            });
+        }
+
+        function generateVariants() {
+            const selectedColors = getSelectedColors();
+            const selectedStorages = getSelectedStorages();
+
+            if (selectedColors.length === 0 || selectedStorages.length === 0) {
+                variantsContainer.style.display = 'none';
+                variantsContainer.innerHTML = '';
+                return;
+            }
+
+            variantsContainer.style.display = 'block';
+            variantsContainer.innerHTML = '';
+
+            let variantIndex = 0;
+            selectedColors.forEach(color => {
+                selectedStorages.forEach(storage => {
+                    const priceInput = storagePricesContainer.querySelector(`[data-storage-price="${storage.id}"]`);
+                    const price = priceInput ? priceInput.value : '';
+
+                    const variantRow = document.createElement('div');
+                    variantRow.className = 'variant-row';
+                    variantRow.style.cssText = 'display: flex; gap: 10px; align-items: center; padding: 10px; border: 1px solid var(--border); border-radius: 6px; margin-bottom: 8px; background: var(--surface);';
+
+                    variantRow.innerHTML = `
+                        <div style="flex: 0 0 150px; font-weight: 600; font-size: 13px;">
+                            ${color.name} + ${storage.name}
+                        </div>
+                        <div style="flex: 1;">
+                            <input type="hidden" name="variants[${variantIndex}][color_id]" value="${color.id}">
+                            <input type="hidden" name="variants[${variantIndex}][phone_storage_id]" value="${storage.id}">
+                            <input type="hidden" name="variants[${variantIndex}][price]" value="${price}">
+                            <div style="display: flex; gap: 8px; align-items: flex-end;">
+                                <div style="flex: 0 0 90px; font-size: 12px; color: var(--text-2);">
+                                    $${price || '0.00'}
+                                </div>
+                                <div style="flex: 0 0 80px;">
+                                    <label style="font-size: 11px; color: var(--text-2);">Stock</label>
+                                    <input type="number" name="variants[${variantIndex}][stock]" min="0"
+                                           class="form-control" placeholder="0" value="0" required>
+                                </div>
+                                <div style="flex: 1;">
+                                    <label style="font-size: 11px; color: var(--text-2);">SKU</label>
+                                    <input type="text" name="variants[${variantIndex}][sku]"
+                                           class="form-control font-mono" placeholder="SKU-${color.id}-${storage.id}">
+                                </div>
+                            </div>
+                        </div>
+                    `;
+
+                    variantsContainer.appendChild(variantRow);
+                    variantIndex++;
+                });
+            });
+        }
+
+        // Generate color image upload sections (1 image per color)
+        function generateColorImageSections() {
+            const selectedColors = getSelectedColors();
+
+            const container = document.getElementById('color-images-container');
+
+            if (selectedColors.length === 0) {
+                container.style.display = 'none';
+                container.innerHTML = '';
+                return;
+            }
+
+            container.style.display = 'block';
+            container.innerHTML = '';
+
+            selectedColors.forEach(color => {
+                const colorSection = document.createElement('div');
+                colorSection.className = 'color-image-section';
+                colorSection.style.cssText = 'margin-bottom: 15px; padding: 15px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface);';
+
+                colorSection.innerHTML = `
+                    <div style="font-weight: 600; margin-bottom: 10px; color: var(--text-1);">
+                        ${color.name} Image
+                    </div>
+                    <div>
+                        <input type="file" name="color_images[${color.id}]" accept="image/*" class="form-control">
+                    </div>
+                `;
+
+                container.appendChild(colorSection);
+            });
+        }
+
+        colorCheckboxes.forEach(cb => {
+            cb.addEventListener('change', function() {
+                generateColorImageSections();
+                generateVariants();
+            });
+        });
+
+        storageCheckboxes.forEach(cb => {
+            cb.addEventListener('change', function() {
+                generateStoragePrices();
+                generateVariants();
+            });
+        });
+
+        // Initial generation on page load
+        console.log('Running initial generation');
+        generateStoragePrices();
+        generateVariants();
+        generateColorImageSections();
+        console.log('Initial generation complete');
     });
 </script>
 @endpush

@@ -3,7 +3,7 @@
 .checkout-page {
     background: #f7f7f9;
     min-height: 100vh;
-    padding: 36px 24px 60px;
+    padding: 25px 17px 40px;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
@@ -21,7 +21,7 @@
     background: #fff;
     border-radius: 12px;
     border: 1px solid #e8e8ec;
-    padding: 28px 30px;
+    padding: 10px 15px;
 }
 
 .sticky-summary {
@@ -46,7 +46,8 @@
 .form-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 16px;
+    padding: 0 12px;
+    gap: 20px;
 }
 
 label {
@@ -156,7 +157,7 @@ label {
 /* ── Submit ── */
 .btn-place-order {
     width: 100%;
-    background: #2d3a6e;
+    background: #0056b3;
     color: #fff;
     border: none;
     padding: 15px 0;

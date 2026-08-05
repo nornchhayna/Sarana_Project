@@ -2,30 +2,62 @@
 @section('title', 'Complete Payment — ' . $order->order_number)
 
 @section('content')
-<div class="payment-page">
-    <div class="payment-wrapper">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
 
-        {{-- ── Left: QR Card ── --}}
-        <div class="qr-card">
+<style>
+    .font-display { font-family: 'Sora', sans-serif; }
+    .font-body    { font-family: 'Inter', sans-serif; }
+    .font-mono    { font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; }
+
+    /* Ticket perforation: a punched hole at each end of the seam, colored to match the
+       page background so it reads as a cutout through the card. Position swaps from
+       top/bottom (vertical seam, desktop two-column) to left/right (horizontal seam,
+       mobile stacked) via the media query below. */
+    .ticket-card { position: relative; overflow: hidden; }
+    .notch {
+        position: absolute;
+        width: 26px; height: 26px;
+        border-radius: 9999px;
+        background: #ffffff;
+        z-index: 10;
+    }
+    /* Mobile: seam is a horizontal bar, so notches punch into the left/right card edges */
+    .notch-a { top: 50%; left: -13px; transform: translateY(-50%); }
+    .notch-b { top: 50%; left: auto; right: -13px; transform: translateY(-50%); }
+    @media (min-width: 1024px) {
+        /* Desktop: seam is a vertical bar, so notches punch into the top/bottom card edges */
+        .notch-a { top: -13px; left: 50%; right: auto; transform: translateX(-50%); }
+        .notch-b { bottom: -13px; top: auto; left: 50%; transform: translateX(-50%); }
+    }
+</style>
+
+<div class="payment-page min-h-screen bg-[#fffff] font-body text-[#14213D] px-4 py-10 lg:py-16">
+    <div class="payment-wrapper max-w-[1000px] mx-auto ticket-card bg-[#fffff] rounded-2xl  grid grid-cols-1 lg:grid-cols-[1.3fr_auto_1fr]">
+
+        {{-- ── QR Stub ── --}}
+        <div class="qr-card px-6 py-8 sm:px-8 sm:py-9 lg:px-12 lg:py-14">
 
             {{-- Header --}}
-            <div class="qr-card-header">
-                <img src="{{ asset('images/bakong-logo.png') }}" alt="Bakong" class="bakong-logo"
+            <div class="qr-card-header flex items-center gap-3 lg:gap-4 mb-6 lg:mb-8">
+                <img src="{{ asset('images/bakong-logo.png') }}" alt="Bakong" width="36" height="36"
+                     class="bakong-logo h-9 w-9 lg:h-11 lg:w-11 object-contain shrink-0"
                      onerror="this.style.display='none'">
                 <div>
-                    <h2 class="qr-title">Scan to Pay</h2>
-                    <p class="qr-sub">Use any Bakong-compatible banking app</p>
+                    <h2 class="qr-title font-display text-lg lg:text-2xl font-semibold leading-tight">Scan to Pay</h2>
+                    <p class="qr-sub text-sm lg:text-base text-[#6B7280]">Use any Bakong-compatible banking app</p>
                 </div>
             </div>
 
             {{-- Amount --}}
-            <div class="qr-amount-block">
-                <span class="qr-amount-label">Amount Due</span>
-                <span class="qr-amount">${{ number_format($order->total, 2) }}</span>
+            <div class="qr-amount-block rounded-xl bg-[#E8EFF6] px-5 py-4 lg:px-6 lg:py-5 mb-6 lg:mb-8 flex items-baseline justify-between">
+                <span class="qr-amount-label text-xs lg:text-sm font-medium uppercase tracking-wide text-[#12467A]/70">Amount Due</span>
+                <span class="qr-amount font-mono text-2xl lg:text-3xl font-semibold text-[#12467A]">${{ number_format($order->total, 2) }}</span>
             </div>
 
             {{-- QR Code --}}
-            <div class="qr-image-wrap" id="qr-wrap">
+            <div class="qr-image-wrap relative mb-6 lg:mb-8" id="qr-wrap">
                 @php
                     $qrString = (isset($khqrData['success']) && $khqrData['success'] && !empty($khqrData['qr_string']))
                         ? $khqrData['qr_string']
@@ -33,87 +65,82 @@
                 @endphp
 
                 @if($qrString)
-                    {{-- QR renders here via JS --}}
-                    <div id="qr-container">
-                        <div id="qrcode"></div>
-                        <div id="qr-loading" class="qr-loading-text">Generating QR…</div>
+                    <div class="relative mx-auto flex items-center justify-center w-full max-w-[240px] lg:max-w-[300px]">
+                        {{-- Scanning pulse ring while payment is pending --}}
+                        <span class="absolute inset-0 rounded-2xl border-2 border-[#12467A]/25 animate-ping" id="qr-pulse-ring"></span>
+                        <div id="qr-container" class="relative bg-white rounded-2xl border border-[#D8D2C7] p-5 lg:p-7 w-full">
+                            <div class="relative">
+                                <div id="qrcode" class="flex items-center justify-center min-h-[180px] lg:min-h-[220px]"></div>
+                                {{-- Center logo badge, sits on top of the QR (KHQR codes tolerate a
+                                     small center logo at typical error-correction levels) --}}
+                                <div class="pointer-events-none absolute inset-0 flex items-center justify-center">
+                                    <div class="h-11 w-11 lg:h-14 lg:w-14 rounded-full bg-[#12467A] ring-4 ring-white flex items-center justify-center shadow-sm">
+                                        <span class="font-display font-bold text-white text-lg lg:text-2xl leading-none">$</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- <div id="qr-loading" class="qr-loading-text text-center text-xs text-[#6B7280] mt-2">Generating QR…</div> -->
+                        </div>
                     </div>
                     <input type="hidden" id="qr-string" value="{{ trim($qrString) }}">
                 @else
-                    <div class="qr-unavailable">
-                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none"
-                             stroke="#b0b0be" stroke-width="1.5">
+                    <div class="qr-unavailable flex flex-col items-center text-center gap-3 rounded-2xl border border-dashed border-[#D8D2C7] py-10 px-6 bg-white">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none"
+                             stroke="#B0B0BE" stroke-width="1.5">
                             <rect x="3" y="3" width="7" height="7" rx="1"/>
                             <rect x="14" y="3" width="7" height="7" rx="1"/>
                             <rect x="3" y="14" width="7" height="7" rx="1"/>
                             <path d="M14 14h2v2h-2zM18 14h3M14 18h2M18 18h3v3M16 20v1"/>
                         </svg>
-                        <p>QR not available.<br>
+                        <p class="text-sm text-[#6B7280]">QR not available.<br>
                            @if(!empty($khqrData['error']))
-                               <small style="color:#e74c3c">{{ $khqrData['error'] }}</small>
+                               <small class="text-[#C0392B]">{{ $khqrData['error'] }}</small>
                            @else
-                               Please add your Bakong account ID to <code>.env</code>.
+                               Please add your Bakong account ID to <code class="font-mono text-xs">.env</code>.
                            @endif
                         </p>
                     </div>
                 @endif
 
-                {{-- Paid overlay (shown by JS on confirmation) --}}
-                <div class="qr-paid-overlay" id="paid-overlay" style="display:none">
-                    <div class="paid-icon">✓</div>
-                    <p class="paid-label">Payment confirmed!</p>
-                    <p class="paid-sub">Thank you for your purchase.</p>
+                {{-- Paid overlay — ticket "punch" stamp, shown by JS on confirmation --}}
+                <div class="qr-paid-overlay absolute inset-0 hidden items-center justify-center bg-[#F5F4F1]/95 rounded-2xl" id="paid-overlay">
+                    <div class="flex flex-col items-center gap-2 -rotate-6">
+                        <div class="paid-icon flex items-center justify-center h-16 w-16 rounded-full border-4 border-[#0E9F6E] text-[#0E9F6E] text-2xl font-display font-bold">✓</div>
+                        <p class="paid-label font-display font-semibold text-[#0E9F6E] tracking-wide">PAID</p>
+                    </div>
                 </div>
             </div>
 
             {{-- Full-page success banner --}}
-            <div class="payment-success-banner" id="success-banner" style="display:none">
-                <div class="success-banner-icon">✓</div>
-                <h3 class="success-banner-title">Payment Successful!</h3>
-                <p class="success-banner-text">
-                    Your payment of <strong>${{ number_format($order->total, 2) }}</strong> was received.
+            <div class="payment-success-banner hidden text-center rounded-xl bg-[#E3F9EF] border border-[#0E9F6E]/30 px-5 py-4 mb-6" id="success-banner">
+                <div class="success-banner-icon inline-flex items-center justify-center h-8 w-8 rounded-full bg-[#0E9F6E] text-white text-sm font-bold mb-2">✓</div>
+                <h3 class="success-banner-title font-display font-semibold text-[#0E9F6E]">Payment Successful!</h3>
+                <p class="success-banner-text text-sm text-[#14213D]/80 mt-1">
+                    Your payment of <strong class="font-mono">${{ number_format($order->total, 2) }}</strong> was received.
                     Redirecting you to shop more products…
                 </p>
             </div>
 
             {{-- Status indicator --}}
-            <div class="status-row" id="status-row">
-                <span class="status-dot pending" id="status-dot"></span>
-                <span class="status-text" id="status-text">Waiting for payment…</span>
-                <span class="poll-timer" id="poll-timer"></span>
+            <div class="status-row flex items-center gap-2 mb-4 lg:mb-5" id="status-row">
+                <span class="status-dot pending h-2.5 w-2.5 lg:h-3 lg:w-3 rounded-full bg-[#C77D11] animate-pulse" id="status-dot"></span>
+                <span class="status-text text-sm lg:text-base font-medium flex-1" id="status-text">Waiting for payment…</span>
+                <span class="poll-timer font-mono text-xs lg:text-sm text-[#6B7280]" id="poll-timer"></span>
             </div>
 
-            {{-- Order ref --}}
-            <div class="order-ref">
-                <span class="order-ref-label">Order</span>
-                <span class="order-ref-number">{{ $order->order_number }}</span>
-            </div>
-
-            {{-- Countdown --}}
-            <p class="qr-expiry">
-                QR code valid for <span id="countdown">30:00</span>
-            </p>
-
-            {{-- ── KHQR Debug Panel (remove or hide behind an env check in production) ── --}}
-            @if(config('app.debug'))
-            <div class="khqr-debug" id="khqr-debug">
-                <button type="button" class="khqr-debug-toggle" id="khqr-debug-toggle">
-                    🔍 KHQR Debug Info <span id="khqr-debug-status-pill"></span>
-                </button>
-                <div class="khqr-debug-body" id="khqr-debug-body" style="display:none">
-                    <p class="khqr-debug-hint">
-                        This panel decodes the raw KHQR string and checks its structure and CRC checksum.
-                        It only appears when <code>APP_DEBUG=true</code>. Remove the
-                        <code>@@if(config('app.debug'))</code> wrapper (or set <code>APP_DEBUG=false</code>)
-                        before going to production.
-                    </p>
-                    <div id="khqr-debug-output">Decoding…</div>
+            {{-- Order ref + countdown, styled like a ticket foot --}}
+            <div class="flex items-center justify-between text-sm lg:text-base border-t border-dashed border-[#D8D2C7] pt-4 lg:pt-5 mb-4 lg:mb-5">
+                <div class="order-ref flex items-center gap-2">
+                    <span class="order-ref-label text-[#6B7280]">Order</span>
+                    <span class="order-ref-number font-mono font-medium">{{ $order->order_number }}</span>
                 </div>
+                <p class="qr-expiry text-[#6B7280]">
+                    Valid for <span id="countdown" class="font-mono text-[#14213D]">30:00</span>
+                </p>
             </div>
-            @endif
 
             {{-- Steps --}}
-            <ol class="how-to">
+            <ol class="how-to space-y-2 lg:space-y-2.5 text-sm lg:text-base text-[#14213D]/85 mb-6 lg:mb-8 list-decimal list-inside marker:text-[#12467A] marker:font-medium">
                 <li>Open your banking app (ABA, ACLEDA, Wing, etc.)</li>
                 <li>Tap <strong>Scan QR</strong> or <strong>Pay</strong></li>
                 <li>Scan the code above and confirm the amount</li>
@@ -121,80 +148,94 @@
             </ol>
 
             {{-- Actions --}}
-            <div class="qr-actions">
-                <button type="button" class="btn-cancel-payment" id="btn-cancel-payment">Cancel Payment</button>
-                <a href="{{ route('products.index') }}" class="btn-continue-shop" id="btn-continue-shop">Continue Shopping</a>
+            <div class="qr-actions flex flex-col sm:flex-row gap-3">
+                <button type="button" class="btn-cancel-payment flex-1 rounded-lg border border-[#D8D2C7] px-4 py-2.5 lg:py-3 text-sm lg:text-base font-medium text-[#14213D]/80 hover:bg-[#EDEBE6] transition-colors" id="btn-cancel-payment">Cancel Payment</button>
+                <a href="{{ route('products.index') }}" class="btn-continue-shop flex-1 text-center rounded-lg bg-[#12467A] px-4 py-2.5 lg:py-3 text-sm lg:text-base font-medium text-white hover:bg-[#0E3A63] transition-colors" id="btn-continue-shop">Continue Shopping</a>
             </div>
         </div>
 
-        {{-- ── Right: Order Summary ── --}}
-        <aside class="order-summary-card">
-            <h3 class="summary-heading">Order Summary</h3>
+        {{-- Perforation seam: dashed tear-line with punched-hole notches at each end.
+             Horizontal bar + left/right notches when stacked on mobile,
+             vertical bar + top/bottom notches when side-by-side on desktop. --}}
+        <div class="relative h-px w-full lg:h-full lg:w-px border-t lg:border-t-0 lg:border-l border-dashed border-[#B9B2A4]">
+            <span class="notch notch-a"></span>
+            <span class="notch notch-b"></span>
+        </div>
 
-            <div class="summary-meta">
-                <span class="meta-label">Order number</span>
-                <span class="meta-value">{{ $order->order_number }}</span>
-            </div>
-            <div class="summary-meta">
-                <span class="meta-label">Date</span>
-                <span class="meta-value">{{ $order->created_at->format('d M Y, H:i') }}</span>
-            </div>
-            <div class="summary-meta">
-                <span class="meta-label">Ship to</span>
-                <span class="meta-value">{{ $order->shipping_name }}, {{ $order->shipping_city }}</span>
-            </div>
+        {{-- ── Order Summary Stub ── --}}
+        <aside class="order-summary-card px-6 py-8 sm:px-8 sm:py-9 lg:px-10 lg:py-14">
+            <h3 class="summary-heading font-display text-lg lg:text-2xl font-semibold mb-5 lg:mb-7">Order Summary</h3>
 
-            <div class="summary-divider"></div>
-
-            @foreach($order->items as $item)
-            <div class="summary-item">
-                <div class="item-info">
-                    <span class="item-name">{{ $item->product_name }}</span>
-                    @if($item->color_name || $item->storage_label)
-                        <span class="item-variant">
-                            {{ $item->color_name }}
-                            @if($item->color_name && $item->storage_label) · @endif
-                            {{ $item->storage_label }}
-                        </span>
-                    @endif
-                    <span class="item-qty">Qty: {{ $item->quantity }}</span>
+            <div class="space-y-2 text-sm lg:text-base mb-5 lg:mb-6">
+                <div class="summary-meta flex justify-between">
+                    <span class="meta-label text-[#6B7280]">Order number</span>
+                    <span class="meta-value font-mono font-medium">{{ $order->order_number }}</span>
                 </div>
-                <span class="item-price">
-                    ${{ number_format($item->total_price ?? $item->subtotal ?? ($item->unit_price * $item->quantity), 2) }}
-                </span>
-            </div>
-            @endforeach
-
-            <div class="summary-divider"></div>
-
-            <div class="total-row">
-                <span>Subtotal</span>
-                <span>${{ number_format($order->subtotal, 2) }}</span>
+                <div class="summary-meta flex justify-between">
+                    <span class="meta-label text-[#6B7280]">Date</span>
+                    <span class="meta-value font-mono">{{ $order->created_at->format('d M Y, H:i') }}</span>
+                </div>
+                <div class="summary-meta flex justify-between gap-4">
+                    <span class="meta-label text-[#6B7280] shrink-0">Ship to</span>
+                    <span class="meta-value text-right">{{ $order->shipping_name }}, {{ $order->shipping_city }}</span>
+                </div>
             </div>
 
-            @if($order->discount_amount > 0)
-            <div class="total-row discount-row">
-                <span>Discount</span>
-                <span>-${{ number_format($order->discount_amount, 2) }}</span>
+            <div class="summary-divider border-t border-dashed border-[#D8D2C7] mb-4"></div>
+
+            <div class="space-y-4 mb-4">
+                @foreach($order->items as $item)
+                <div class="summary-item flex justify-between gap-3">
+                    <div class="item-info text-sm">
+                        <span class="item-name font-medium block">{{ $item->product_name }}</span>
+                        @if($item->color_name || $item->storage_label)
+                            <span class="item-variant text-xs text-[#6B7280] block">
+                                {{ $item->color_name }}
+                                @if($item->color_name && $item->storage_label) · @endif
+                                {{ $item->storage_label }}
+                            </span>
+                        @endif
+                        <span class="item-qty text-xs text-[#6B7280]">Qty: {{ $item->quantity }}</span>
+                    </div>
+                    <span class="item-price font-mono text-sm font-medium whitespace-nowrap">
+                        ${{ number_format($item->total_price ?? $item->subtotal ?? ($item->unit_price * $item->quantity), 2) }}
+                    </span>
+                </div>
+                @endforeach
             </div>
-            @endif
 
-            <div class="total-row">
-                <span>Shipping</span>
-                <span class="free-tag">Free</span>
+            <div class="summary-divider border-t border-dashed border-[#D8D2C7] mb-4"></div>
+
+            <div class="space-y-2 text-sm mb-4">
+                <div class="total-row flex justify-between">
+                    <span>Subtotal</span>
+                    <span class="font-mono">${{ number_format($order->subtotal, 2) }}</span>
+                </div>
+
+                @if($order->discount_amount > 0)
+                <div class="total-row discount-row flex justify-between text-[#0E9F6E]">
+                    <span>Discount</span>
+                    <span class="font-mono">-${{ number_format($order->discount_amount, 2) }}</span>
+                </div>
+                @endif
+
+                <div class="total-row flex justify-between">
+                    <span>Shipping</span>
+                    <span class="free-tag text-[#0E9F6E] font-medium">Free</span>
+                </div>
             </div>
 
-            <div class="summary-divider"></div>
+            <div class="summary-divider border-t border-dashed border-[#D8D2C7] mb-4"></div>
 
-            <div class="total-row grand-total">
+            <div class="total-row grand-total flex justify-between items-baseline font-display font-semibold text-base lg:text-lg mb-5 lg:mb-6">
                 <span>Total</span>
-                <span>${{ number_format($order->total, 2) }}</span>
+                <span class="font-mono text-lg lg:text-xl">${{ number_format($order->total, 2) }}</span>
             </div>
 
             {{-- Payment status badge --}}
-            <div class="payment-status-badge" id="payment-badge">
-                <span class="badge-dot" id="badge-dot"></span>
-                <span id="badge-text">Awaiting Payment</span>
+            <div class="payment-status-badge flex items-center gap-2 rounded-lg bg-[#FBF0DE] px-3 py-2 lg:px-4 lg:py-3" id="payment-badge">
+                <span class="badge-dot h-2 w-2 rounded-full bg-[#C77D11]" id="badge-dot"></span>
+                <span class="text-sm lg:text-base font-medium text-[#8A5709]" id="badge-text">Awaiting Payment</span>
             </div>
         </aside>
 

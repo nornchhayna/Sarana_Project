@@ -24,7 +24,16 @@
     .btn-action { width: 32px; height: 32px; border-radius: 6px; border: 1px solid var(--border, #252A3A); background: var(--card, #1A1E2B); color: var(--text-2, #8B90A7); display: grid; place-items: center; cursor: pointer; transition: all 0.2s; text-decoration: none; font-size: 13px; }
     .btn-action:hover { border-color: var(--accent, #5B6EF5); color: var(--text-1, #E8EAF2); background: rgba(91, 110, 245, 0.1); }
     .btn-action.delete:hover { border-color: var(--accent-3, #FF5C7A); color: var(--accent-3, #FF5C7A); background: rgba(255, 92, 122, 0.1); }
-    
+    svg {
+    width: 40px;
+    height: 40px;
+}
+nav[role="navigation"] svg {
+    display: inline-block;
+    width: 20px !important;
+    height: 20px !important;
+    vertical-align: middle;
+}
     .card-footer { padding: 16px 22px; border-top: 1px solid var(--border, #252A3A); }
     .table-wrap { overflow-x: auto; background: var(--card, #1A1E2B); border-radius: 12px; border: 1px solid var(--border, #252A3A); }
     table { width: 100%; border-collapse: collapse; }
@@ -120,7 +129,7 @@
     
     @if($models->hasPages())
     <div class="card-footer">
-        {{ $models->links() }}
+       {{ $models->links() }}
     </div>
     @endif
 </div>

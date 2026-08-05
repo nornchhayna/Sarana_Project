@@ -4,442 +4,52 @@
 @section('meta_description', Str::limit(strip_tags($product->description), 150))
 
 @push('styles')
-<style>
-    /* ── BASE THEME VARIABLES ── */
-    :root {
-        --clr-primary: #0056b3;
-        --clr-dark: #2B3D5D;
-        --clr-body: #4F5D77;
-        --clr-muted: #9CA3AF;
-        --clr-border: #E5E7EB;
-        --clr-sale: #E74C3C;
-        --clr-bg: #F9FAFB;
-        --radius-md: 8px;
-        --radius-sm: 4px;
-        --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
-        --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1);
-    }
-
-    /* ── BREADCRUMB ── */
-    .breadcrumb-custom {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 14px;
-        color: var(--clr-muted);
-        margin-bottom: 24px;
-    }
-    .breadcrumb-custom a {
-        color: var(--clr-muted);
-        text-decoration: none;
-        transition: color 0.2s;
-    }
-    .breadcrumb-custom a:hover {
-        color: var(--clr-primary);
-    }
-    .breadcrumb-custom .sep {
-        color: var(--clr-border);
-    }
-
-    /* ── 2 COLUMN GRID ── */
-    .product-details-wrapper {
-        background: #fff;
-        border-radius: var(--radius-md);
-        padding: 40px;
-        box-shadow: var(--shadow-sm);
-        border: 1px solid var(--clr-border);
-        margin-bottom: 40px;
-    }
-
-    .product-grid {
-        display: grid;
-        grid-template-columns: 5fr 7fr;   /* Similar to your original 5-7 ratio */
-        gap: 50px;
-    }
-
-    @media (max-width: 992px) {
-        .product-grid {
-            grid-template-columns: 1fr;
-            gap: 35px;
-        }
-    }
-.btn-buy-now {
-    background: var(--clr-primary, #FF6B00);
-    color: #fff;
-    border: none;
-    padding: 12px 20px;
-    border-radius: 6px;
-    font-weight: 800;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-  
-        height: 48px;
-        background: var(--clr-primary);
-        color: #fff;
-        border: none;
-        border-radius: var(--radius-sm);
-        font-size: 13px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: background 0.2s, transform 0.1s;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        text-decoration: none;
-}
-.btn-buy-now:hover {
-    background: #004494;
-}
-.btn-buy-now:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-    /* ── GALLERY ── */
-    .gallery-main {
-        border: 1px solid var(--clr-border);
-        border-radius: var(--radius-md);
-        padding: 20px;
-        text-align: center;
-        margin-bottom: 15px;
-        background: #fff;
-        height: 400px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        overflow: hidden;
-    }
-    .gallery-main img {
-        max-width: 100%;
-        max-height: 100%;
-        object-fit: contain;
-    }
-    .gallery-thumbs {
-        display: flex;
-        gap: 10px;
-        overflow-x: auto;
-        padding-bottom: 5px;
-    }
-    .thumb-btn {
-        width: 80px;
-        height: 80px;
-        border: 2px solid transparent;
-        border-radius: var(--radius-sm);
-        background: #fff;
-        padding: 5px;
-        cursor: pointer;
-        flex-shrink: 0;
-        transition: all 0.2s;
-    }
-    .thumb-btn img {
-        width: 100%;
-        height: 100%;
-        object-fit: contain;
-    }
-    .thumb-btn.active, .thumb-btn:hover {
-        border-color: var(--clr-primary);
-    }
-
-    /* All your other original styles remain unchanged below */
-    .badge-hot, .badge-preorder {
-        font-size: 11px;
-        font-weight: 700;
-        padding: 4px 10px;
-        border-radius: 20px;
-        color: #fff;
-        background: var(--clr-sale);
-        letter-spacing: 0.5px;
-    }
-    .badge-preorder { background: #8E338A; }
-
-    .prod-brand {
-        font-size: 13px;
-        text-transform: uppercase;
-        color: var(--clr-muted);
-        letter-spacing: 1px;
-        margin-bottom: 5px;
-        font-weight: 600;
-    }
-    .prod-title {
-        font-size: 28px;
-        font-weight: 700;
-        color: var(--clr-dark);
-        margin-bottom: 15px;
-        line-height: 1.3;
-    }
-
-    .prod-rating {
-        display: flex;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 15px;
-        font-size: 14px;
-        color: var(--clr-muted);
-        margin-bottom: 20px;
-        padding-bottom: 20px;
-        border-bottom: 1px solid var(--clr-border);
-    }
-    .stars { color: #F59E0B; font-size: 13px; }
-    .prod-sold {
-        border-left: 1px solid var(--clr-border);
-        padding-left: 15px;
-    }
-    .prod-sold strong { color: var(--clr-dark); }
-
-    .price-box {
-        display: flex;
-        align-items: center;
-        gap: 15px;
-        margin-bottom: 25px;
-    }
-    .price-current {
-        font-size: 32px;
-        font-weight: 700;
-        color: var(--clr-sale);
-    }
-    .price-old {
-        font-size: 18px;
-        color: var(--clr-muted);
-        text-decoration: line-through;
-    }
-    .badge-discount {
-        background: #FEF2F2;
-        color: var(--clr-sale);
-        padding: 4px 8px;
-        border-radius: var(--radius-sm);
-        font-weight: 700;
-        font-size: 13px;
-    }
-
-    .info-list {
-        list-style: none;
-        padding: 0;
-        margin: 0 0 25px 0;
-        font-size: 14px;
-        color: var(--clr-dark);
-    }
-    .info-list li {
-        margin-bottom: 8px;
-        display: flex;
-    }
-    .info-list .label {
-        width: 120px;
-        color: var(--clr-muted);
-    }
-
-    .variant-selectors {
-        display: flex;
-        flex-direction: column;
-        gap: 14px;
-        margin-bottom: 10px;
-    }
-    .variant-group {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        flex-wrap: wrap;
-    }
-    .variant-label {
-        font-size: 13px;
-        font-weight: 600;
-        color: var(--clr-muted);
-        min-width: 60px;
-    }
-    .variant-swatches {
-        display: flex;
-        gap: 8px;
-    }
-    .variant-swatch {
-        width: 28px;
-        height: 28px;
-        border-radius: 50%;
-        border: 2px solid var(--clr-border);
-        cursor: pointer;
-        padding: 0;
-        transition: border-color 0.15s ease, transform 0.15s ease;
-    }
-    .variant-swatch:hover {
-        transform: scale(1.1);
-    }
-    .variant-swatch.is-selected {
-        border-color: var(--clr-dark);
-        box-shadow: 0 0 0 2px #fff inset;
-    }
-    .variant-storage-options {
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
-    }
-    .variant-storage-option {
-        font-size: 13px;
-        font-weight: 600;
-        padding: 6px 14px;
-        border-radius: var(--radius-sm);
-        border: 1px solid var(--clr-border);
-        background: #fff;
-        color: var(--clr-dark);
-        cursor: pointer;
-        transition: border-color 0.15s ease, background-color 0.15s ease;
-    }
-    .variant-storage-option:hover {
-        border-color: var(--clr-muted);
-    }
-    .variant-storage-option.is-selected {
-        border-color: var(--clr-dark);
-        background-color: var(--clr-dark);
-        color: #fff;
-    }
-    .variant-error {
-        font-size: 13px;
-        font-weight: 600;
-        color: var(--clr-sale);
-    }
-
-    .action-area {
-        display: flex;
-        align-items: center;
-        gap: 15px;
-        margin-top: 30px;
-        padding-top: 30px;
-        border-top: 1px solid var(--clr-border);
-    }
-    .qty-selector {
-        display: flex;
-        align-items: center;
-        border: 1px solid var(--clr-border);
-        border-radius: var(--radius-sm);
-        height: 48px;
-        background: #fff;
-    }
-    .qty-btn {
-        width: 40px;
-        height: 100%;
-        background: transparent;
-        border: none;
-        font-size: 18px;
-        color: var(--clr-dark);
-        cursor: pointer;
-        transition: background 0.2s;
-    }
-    .qty-btn:hover { background: var(--clr-bg); }
-    .qty-input {
-        width: 50px;
-        height: 100%;
-        border: none;
-        border-left: 1px solid var(--clr-border);
-        border-right: 1px solid var(--clr-border);
-        text-align: center;
-        font-weight: 600;
-        color: var(--clr-dark);
-        -moz-appearance: textfield;
-    }
-    .qty-input::-webkit-outer-spin-button,
-    .qty-input::-webkit-inner-spin-button {
-        -webkit-appearance: none;
-        margin: 0;
-    }
-
-    .btn-add-cart {
-        flex-grow: 1;
-        height: 48px;
-        background: var(--clr-primary);
-        color: #fff;
-        border: none;
-        border-radius: var(--radius-sm);
-        font-size: 16px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: background 0.2s, transform 0.1s;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        text-decoration: none;
-    }
-    .btn-add-cart:hover:not(:disabled) {
-        background: #004494;
-    }
-    .btn-add-cart:active:not(:disabled) {
-        transform: scale(0.98);
-    }
-    .btn-add-cart:disabled {
-        background: var(--clr-muted);
-        cursor: not-allowed;
-    }
-
-    .btn-wishlist {
-        width: 48px;
-        height: 48px;
-        border: 1px solid var(--clr-border);
-        background: #fff;
-        color: var(--clr-dark);
-        border-radius: var(--radius-sm);
-        font-size: 18px;
-        cursor: pointer;
-        transition: all 0.2s;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-    .btn-wishlist:hover {
-        border-color: var(--clr-sale);
-        color: var(--clr-sale);
-        background: #FEF2F2;
-    }
-
-    /* ── RESPONSIVE DESIGN ── */
-    @media (max-width: 768px) {
-        .action-area { flex-wrap: wrap; }
-        .qty-selector { width: 100%; justify-content: space-between; }
-        .qty-input { width: 100%; }
-        .btn-add-cart, .btn-wishlist { flex: 1; }
-    }
-    @media (max-width: 576px) {
-        .prod-rating { flex-direction: column; align-items: flex-start; gap: 5px; }
-        .prod-sold { border-left: none; padding-left: 0; }
-    }
-</style>
+    <link rel="stylesheet" href="{{ asset('css/productshow.css') }}">
 @endpush
 
 @section('content')
 <div class="container-xl">
 
-    {{-- ── BREADCRUMB ── --}}
     <nav class="breadcrumb-custom">
         <a href="{{ route('home') }}">Home</a>
         <span class="sep"><i class="fa-solid fa-chevron-right" style="font-size: 10px;"></i></span>
         <a href="{{ route('products.index') }}">Products</a>
-
         @if($product->category)
             <span class="sep"><i class="fa-solid fa-chevron-right" style="font-size: 10px;"></i></span>
             <a href="{{ route('products.index', ['category' => $product->category_id]) }}">{{ $product->category->name }}</a>
         @endif
-
         <span class="sep"><i class="fa-solid fa-chevron-right" style="font-size: 10px;"></i></span>
         <span style="color: var(--clr-dark);">{{ Str::limit($product->name, 40) }}</span>
     </nav>
 
-    {{-- ── MAIN PRODUCT BLOCK (2 GRID) ── --}}
     <div class="product-details-wrapper">
         <div class="product-grid">
 
             {{-- Left: Image Gallery --}}
             <div>
                 @php
-                    $images = is_string($product->images) ? json_decode($product->images, true) : $product->images;
-                    $images = is_array($images) ? $images : [];
+                    // Get images from product_images table using variantImages relationship
+                    $productImages = $product->variantImages()->orderBy('sort_order')->get();
+                    $images = [];
 
-                    if ($product->thumbnail) {
-                        array_unshift($images, $product->thumbnail);
+                    if ($productImages->count() > 0) {
+                        $images = $productImages->map(fn($img) => asset('storage/' . $img->image))->toArray();
                     }
-                    $images = array_unique($images);
+
+                    // Use thumbnail as main image if no product images exist
+                    if (empty($images) && $product->thumbnail) {
+                        $images = [asset('storage/' . $product->thumbnail)];
+                    }
+
+                    // If still no images, use placeholder
+                    if (empty($images)) {
+                        $images = [];
+                    }
                 @endphp
 
                 <div class="gallery-main">
                     @if(count($images) > 0)
-                        <img id="main-image" src="{{ asset('storage/' . $images[0]) }}" alt="{{ $product->name }}">
+                        <img id="main-image" src="{{ $images[0] }}" alt="{{ $product->name }}">
                     @else
                         <div style="font-size: 80px; color: var(--clr-border);">📦</div>
                     @endif
@@ -448,8 +58,8 @@
                 @if(count($images) > 1)
                     <div class="gallery-thumbs">
                         @foreach($images as $index => $img)
-                            <button class="thumb-btn {{ $index === 0 ? 'active' : '' }}" onclick="changeMainImage(this, '{{ asset('storage/' . $img) }}')">
-                                <img src="{{ asset('storage/' . $img) }}" alt="Thumbnail {{ $index + 1 }}">
+                            <button class="thumb-btn {{ $index === 0 ? 'active' : '' }}" onclick="changeMainImage(this, '{{ $img }}')">
+                                <img src="{{ $img }}" alt="Thumbnail {{ $index + 1 }}">
                             </button>
                         @endforeach
                     </div>
@@ -471,27 +81,27 @@
                 <h1 class="prod-title">{{ $product->name }}</h1>
 
                 {{-- Rating & Sold Info --}}
-                <div class="prod-rating">
-                    <div class="stars">
-                        @php $rating = round($product->avg_rating ?? 0); @endphp
-                        @for($i = 1; $i <= 5; $i++)
-                            @if($i <= $rating) <i class="fa-solid fa-star"></i>
-                            @else <i class="fa-regular fa-star"></i>
-                            @endif
-                        @endfor
-                    </div>
-                    <span>({{ $product->reviews_count ?? 0 }} Reviews)</span>
+               <div class="prod-rating">
+    <div class="stars">
+        @php $rating = round($averageRating ?? 0); @endphp
+        @for($i = 1; $i <= 5; $i++)
+            @if($i <= $rating) <i class="fa-solid fa-star"></i>
+            @else <i class="fa-regular fa-star"></i>
+            @endif
+        @endfor
+    </div>
+    <span class="rating-bar-pct">{{ $reviewCount ?? 0 }} Reviews</span>
 
-                    <div class="prod-sold">
-                        <strong>{{ number_format($product->total_sold ?? 0) }}</strong> Sold
-                    </div>
+    <div class="prod-sold">
+        <strong>{{ number_format($product->total_sold ?? 0) }}</strong> Sold
+    </div>
 
-                    @if($product->sku)
-                        <div class="prod-sold">
-                            SKU: <strong>{{ $product->sku }}</strong>
-                        </div>
-                    @endif
-                </div>
+    @if($product->sku)
+        <div class="prod-sold">
+            SKU: <strong>{{ $product->sku }}</strong>
+        </div>
+    @endif
+</div>
 
                 {{-- Price Box --}}
                 <div class="price-box">
@@ -511,7 +121,7 @@
                     @endif
 
                     <li><span class="label">Availability:</span>
-                        @php $stockTotal = $product->stock ? $product->stock->sum('quantity') : 0; @endphp
+                        @php $stockTotal = $product->variants ? $product->variants->sum('stock') : 0; @endphp
                         @if($stockTotal > 0)
                             <strong style="color: var(--clr-sale);">In Stock ({{ $stockTotal }} Units)</strong>
                         @else
@@ -612,7 +222,7 @@
             </a>
         @endauth
 
-        <button type="button" class="btn-wishlist" title="Add to Wishlist" onclick="document.getElementById('wishlist-form').submit();">
+        <button type="button" class="btn-wishlist" title="Add to Wishlist" onclick="submitWishlist();">
             <i class="fa-regular fa-heart"></i>
         </button>
     </div>
@@ -622,97 +232,139 @@
 <form id="wishlist-form" action="{{ route('wishlist.store') }}" method="POST" class="d-none">
     @csrf
     <input type="hidden" name="product_id" value="{{ $product->id }}">
+    <input type="hidden" name="color_id" id="wishlist-color-id" value="">
+    <input type="hidden" name="phone_storage_id" id="wishlist-storage-id" value="">
 </form>
 
             </div>
         </div>
     </div>
 
-    {{-- ── RELATED PRODUCTS ── (unchanged) --}}
-    @if(isset($related) && $related->count() > 0)
-    <div class="mb-5" style="margin-left: 2rem; margin-right: 2rem;">
-        <div class="d-flex justify-content-between align-items-end mb-4 border-bottom pb-2" style="border-color: #ececec !important;">
-            <h3 style="font-size: 24px; font-weight: 700; color: #253D4E; margin: 0;">Related Products</h3>
+{{-- Reviews Section --}}
+<section class="reviews-section">
+
+    {{-- Top stats row --}}
+    <div class="reviews-stats">
+        <div>
+            @for ($star = 5; $star >= 1; $star--)
+                @php $count = $ratingBreakdown[$star] ?? 0; @endphp
+                <div class="rating-bar-row">
+                    <span class="rating-bar-star">{{ $star }} ★</span>
+                    <div class="rating-bar-track">
+                        <div class="rating-bar-fill" style="width: {{ $reviewCount ? ($count / $reviewCount * 100) : 0 }}%"></div>
+                    </div>
+                    <span class="rating-bar-pct">{{ $reviewCount ? round($count / $reviewCount * 100) : 0 }}%</span>
+                </div>
+            @endfor
         </div>
 
-        <div class="ecom-products-grid" style="margin-left: 1rem; margin-right: 1rem;">
-            @foreach($related->take(4) as $relatedProduct)
-                <div class="ecom-deal-card">
-                    <!-- Your original related product card code (unchanged) -->
-                    @if($relatedProduct->sale_price && $relatedProduct->base_price > $relatedProduct->sale_price)
-                        @php $relDiscount = round((($relatedProduct->base_price - $relatedProduct->sale_price) / $relatedProduct->base_price) * 100); @endphp
-                        <span class="ecom-deal-badge">-{{ $relDiscount }}%</span>
-                    @endif
+        <div>
+            <p class="reviews-stat-title">Total Reviews</p>
+            <div class="reviews-stat-value">{{ $reviewCount }} <span class="stat-suffix">Reviews</span></div>
+        </div>
 
-                    <div class="ecom-deal-img">
-                       <a href="{{ route('products.show', $relatedProduct->slug) }}">
-                            @if($relatedProduct->thumbnail)
-                                <img src="{{ asset('storage/' . $relatedProduct->thumbnail) }}" alt="{{ $relatedProduct->name }}">
-                            @else
-                                <div style="font-size:60px; color:#adadad;">📦</div>
-                            @endif
-                        </a>
+        <div>
+            <p class="reviews-stat-title">Average Rating</p>
+            <div class="reviews-stat-rating">
+                {{ number_format($averageRating, 1) }}
+                <span class="stars">
+                    @for ($i = 1; $i <= 5; $i++)
+                        {{ $i <= round($averageRating) ? '★' : '☆' }}
+                    @endfor
+                </span>
+            </div>
+        </div>
+    </div>
+
+    {{-- Title + filters --}}
+    <div class="reviews-header">
+        <h2 class="reviews-title">Customer Feedbacks</h2>
+    </div>
+
+    {{-- Cards --}}
+    <div class="review-grid">
+        @forelse($product->reviews as $review)
+            <div class="review-card">
+                <div class="review-card-header">
+                    <div class="review-avatar">
+                        {{ strtoupper(substr($review->user->name ?? 'A', 0, 1)) }}
                     </div>
+                    <span class="review-user-name">{{ $review->user->name ?? 'Anonymous' }}</span>
+                </div>
 
-                    <span class="ecom-deal-brand">{{ $relatedProduct->brand->name ?? 'Brand' }}</span>
-                    <a href="{{ route('products.show', $relatedProduct->slug) }}" class="ecom-deal-title">
-                        {{ $relatedProduct->name }}
-                    </a>
+                <div class="review-stars">
+                    @for ($i = 1; $i <= 5; $i++)
+                        {{ $i <= $review->rating ? '★' : '☆' }}
+                    @endfor
+                </div>
 
-                    <div class="ecom-deal-rating">
-                        @php $relRating = round($relatedProduct->avg_rating ?? rand(4,5)); @endphp
-                        @for($i = 1; $i <= 5; $i++)
-                            <i class="fa-solid fa-star {{ $i <= $relRating ? '' : 'star-empty' }}"></i>
-                        @endfor
-                        <span>({{ $relatedProduct->reviews_count ?? rand(10,50) }})</span>
+                @if($review->title)
+                    <p style="font-weight:600; font-size:0.875rem; margin-bottom:0.4rem;">{{ $review->title }}</p>
+                @endif
+
+                @if($review->body)
+                    <p class="review-body">{{ $review->body }}</p>
+                @endif
+
+                @if($review->images && count($review->images))
+                    <div class="review-images">
+                        @foreach($review->images as $imagePath)
+                           <img src="{{ Storage::url($imagePath) }}" class="review-image" onclick="openLightbox('{{ Storage::url($imagePath) }}')">
+                        @endforeach
                     </div>
+                @endif
 
-                    <div class="ecom-deal-desc" title="{{ strip_tags($relatedProduct->description) }}">
-                        {{ strip_tags($relatedProduct->description) ?? 'No description available for this product.' }}
-                    </div>
+                <div class="review-footer">
+                    <span>{{ $review->created_at->diffForHumans() }}</span>
+                </div>
+            </div>
+        @empty
+            <div class="review-empty">
+                <p>No reviews yet. Be the first to review this product!</p>
+            </div>
+        @endforelse
+    </div>
+</section>
 
-                    <div class="ecom-deal-price">
-                        <span class="ecom-deal-price-current">${{ number_format($relatedProduct->sale_price ?? $relatedProduct->base_price, 2) }}</span>
-                        @if($relatedProduct->sale_price && $relatedProduct->base_price > $relatedProduct->sale_price)
-                            <span class="ecom-deal-price-old">${{ number_format($relatedProduct->base_price, 2) }}</span>
-                        @endif
-                    </div>
+@if(isset($related) && $related->count() > 0)
+@php $sectionId = 'deals-of-the-day'; @endphp
+<section class="py-6 sm:py-8">
+    <div class="max-w-[1440px] mx-auto px-4 sm:px-6">
 
-                    <div class="ecom-deal-swap-area">
-                        @php
-                            $relSold = rand(100, 300);
-                            $relAvailable = rand(50, 200);
-                            $relTotal = $relSold + $relAvailable;
-                            $relPercentage = ($relSold / $relTotal) * 100;
-                        @endphp
-                        <div class="ecom-deal-progress-wrap">
-                            <div class="ecom-deal-progress-bar">
-                                <div class="ecom-deal-progress-fill" style="width: {{ $relPercentage }}%;"></div>
-                                <div class="ecom-deal-progress-thumb" style="left: calc({{ $relPercentage }}% - 6px);"></div>
-                            </div>
-                            <div class="ecom-deal-stats">
-                                <div>Sold: <span>{{ $relSold }}</span></div>
-                                <div>Available: <span>{{ $relAvailable }}</span></div>
-                            </div>
-                        </div>
+        <div class="flex items-center justify-between mb-4 sm:mb-6">
+            <h2 class="text-[18px] sm:text-[22px] font-bold text-[#2B3D5D]">
+                Deals of the Day
+            </h2>
 
-                        <div class="ecom-deal-action-wrapper">
-                            <form action="{{ route('cart.add') }}" method="POST" style="margin: 0; padding: 0; width: 100%;">
-                                @csrf
-                                <input type="hidden" name="product_id" value="{{ $relatedProduct->id }}">
-                                <input type="hidden" name="quantity" value="1">
-                                <button type="submit" class="ecom-deal-btn-cart">
-                                    <i class="fa-solid fa-cart-shopping" style="margin-right: 8px;"></i> Add to Cart
-                                </button>
-                            </form>
-                        </div>
-                    </div>
+            <div class="flex items-center gap-2 sm:gap-3">
+                <button type="button" class="carousel-prev-{{ $sectionId }} w-8 h-8 sm:w-9 sm:h-9 rounded-full border border-[#999aae] flex items-center justify-center text-[#2B3D5D] hover:bg-[#1562c7] hover:text-white hover:border-[#1562c7] transition-colors">
+                    <i class="fa-solid fa-chevron-left text-xs"></i>
+                </button>
+                <button type="button" class="carousel-next-{{ $sectionId }} w-8 h-8 sm:w-9 sm:h-9 rounded-full border border-[#999aae] flex items-center justify-center text-[#2B3D5D] hover:bg-[#1562c7] hover:text-white hover:border-[#1562c7] transition-colors">
+                    <i class="fa-solid fa-chevron-right text-xs"></i>
+                </button>
+            </div>
+        </div>
+
+        <div
+            id="carousel-track-{{ $sectionId }}"
+            class="carousel-track flex gap-2 sm:gap-3 md:gap-4 lg:gap-6 overflow-x-auto scroll-smooth snap-x snap-mandatory no-scrollbar"
+        >
+            @foreach($related as $product)
+                <div class="carousel-item snap-start shrink-0 w-[calc(50%-4px)] sm:w-[calc(33.333%-8px)] md:w-[calc(25%-12px)] lg:w-[calc(20%-19.2px)]">
+                    @include('layouts.partials.product-card', ['product' => $product])
                 </div>
             @endforeach
         </div>
-    </div>
-    @endif
 
+    </div>
+</section>
+@endif
+<br>
+{{-- Image Lightbox --}}
+<div class="image-lightbox" id="image-lightbox" onclick="if(event.target === this) closeLightbox()">
+    <button type="button" class="image-lightbox-close" onclick="closeLightbox()">&times;</button>
+    <img id="lightbox-img" src="" alt="Review image">
 </div>
 @endsection
 @push('scripts')
@@ -740,6 +392,22 @@
         }
     }
 
+    // Submit the wishlist form, but first copy over whatever color/storage
+    // is currently selected on the Add to Cart form, so the wishlist entry
+    // remembers the same variant instead of saving color_id/phone_storage_id
+    // as null.
+    function submitWishlist() {
+        const selectedColor = document.getElementById('selected-color-id');
+        const selectedStorage = document.getElementById('selected-storage-id');
+        const wishlistColor = document.getElementById('wishlist-color-id');
+        const wishlistStorage = document.getElementById('wishlist-storage-id');
+
+        if (wishlistColor) wishlistColor.value = selectedColor ? selectedColor.value : '';
+        if (wishlistStorage) wishlistStorage.value = selectedStorage ? selectedStorage.value : '';
+
+        document.getElementById('wishlist-form').submit();
+    }
+
     // Handle Color/Storage Variant Selection + gate Add to Cart / Buy Now submission
     document.addEventListener('DOMContentLoaded', function () {
         const wrapper = document.querySelector('.variant-selectors');
@@ -747,6 +415,7 @@
         if (!form) return;
 
         const buyNowInput = document.getElementById('buy-now-flag');
+        const productId = wrapper?.dataset.productId;
 
         // Track which button triggered the submit (Add to Cart vs Buy Now)
         // and set the flag BEFORE the submit event runs validation.
@@ -767,11 +436,25 @@
         const storageInput = document.getElementById('selected-storage-id');
         const errorEl = wrapper.querySelector('.variant-error');
 
+        let selectedColorId = null;
+        let selectedStorageId = null;
+
         function selectButton(buttons, btn, input) {
             buttons.forEach(b => b.classList.remove('is-selected'));
             btn.classList.add('is-selected');
-            input.value = btn.dataset.colorId ?? btn.dataset.storageId;
+
+            if (btn.dataset.colorId) {
+                selectedColorId = btn.dataset.colorId;
+                colorInput.value = selectedColorId;
+            }
+            if (btn.dataset.storageId) {
+                selectedStorageId = btn.dataset.storageId;
+                storageInput.value = selectedStorageId;
+            }
             hideError();
+
+            // Fetch variant data
+            fetchVariantData();
         }
 
         function showError(message) {
@@ -784,6 +467,99 @@
             if (!errorEl) return;
             errorEl.hidden = true;
         }
+
+        async function fetchVariantData() {
+            if (!productId) return;
+
+            const params = new URLSearchParams({
+                product_id: productId
+            });
+
+            if (selectedColorId) params.append('color_id', selectedColorId);
+            if (selectedStorageId) params.append('phone_storage_id', selectedStorageId);
+
+            try {
+                const response = await fetch(`/api/v1/product-variant?${params}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    updateVariantUI(data.data);
+                } else {
+                    console.error('Variant not found:', data.message);
+                }
+            } catch (error) {
+                console.error('Error fetching variant:', error);
+            }
+        }
+
+        function updateVariantUI(variant) {
+            // Update price
+            const priceCurrent = document.querySelector('.price-current');
+            const priceOld = document.querySelector('.price-old');
+            const badgeDiscount = document.querySelector('.badge-discount');
+
+            if (priceCurrent) {
+                priceCurrent.textContent = `$${parseFloat(variant.price).toFixed(2)}`;
+            }
+
+            // Update SKU
+            const skuElement = document.querySelector('.prod-sold strong');
+            if (skuElement && variant.sku) {
+                // Find the SKU element specifically
+                const skuText = Array.from(document.querySelectorAll('.prod-sold'))
+                    .find(el => el.textContent.includes('SKU'));
+                if (skuText) {
+                    const skuStrong = skuText.querySelector('strong');
+                    if (skuStrong) skuStrong.textContent = variant.sku;
+                }
+            }
+
+            // Update stock availability
+            const stockElement = document.querySelector('.info-list li:nth-child(2) strong');
+            if (stockElement) {
+                if (variant.stock > 0) {
+                    stockElement.textContent = `In Stock (${variant.stock} Units)`;
+                    stockElement.style.color = 'var(--clr-sale)';
+                } else {
+                    stockElement.textContent = 'Out of Stock';
+                    stockElement.style.color = '#E74C3C';
+                }
+            }
+
+            // Update images for the selected color
+            if (variant.images && variant.images.length > 0) {
+                updateGallery(variant.images);
+            }
+
+            // Update quantity input max
+            const qtyInput = document.getElementById('qty-input');
+            if (qtyInput && variant.stock > 0) {
+                qtyInput.max = variant.stock;
+            }
+        }
+
+    function updateGallery(images) {
+    const mainImage = document.getElementById('main-image');
+    const thumbsContainer = document.querySelector('.gallery-thumbs');
+
+    if (!mainImage || !images.length) return;
+
+    mainImage.src = images[0].image;
+
+    if (!thumbsContainer) return;
+
+    if (images.length > 1) {
+        // Rebuild thumbnails for this variant's images
+        thumbsContainer.innerHTML = images.map((img, i) => `
+            <button class="thumb-btn ${i === 0 ? 'active' : ''}" onclick="changeMainImage(this, '${img.image}')">
+                <img src="${img.image}" alt="Thumbnail ${i + 1}">
+            </button>
+        `).join('');
+        thumbsContainer.style.display = 'flex';
+    } else {
+        thumbsContainer.style.display = 'none';
+    }
+}
 
         colorButtons.forEach(btn => {
             btn.addEventListener('click', () => selectButton(colorButtons, btn, colorInput));
@@ -806,5 +582,18 @@
             }
         });
     });
+    // Review image lightbox
+function openLightbox(src) {
+    document.getElementById('lightbox-img').src = src;
+    document.getElementById('image-lightbox').classList.add('is-open');
+}
+
+function closeLightbox() {
+    document.getElementById('image-lightbox').classList.remove('is-open');
+}
+
+document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') closeLightbox();
+});
 </script>
 @endpush

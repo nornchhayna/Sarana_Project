@@ -49,20 +49,17 @@ class KHPayWebhookController extends Controller
         };
     }
 
-    // -------------------------------------------------------------------------
-    // Payment Outcomes
-    // -------------------------------------------------------------------------
-
     protected function handlePaymentCompleted(string $ref, array $data)
     {
         $order = Order::where('payment_reference', $ref)->first();
 
         if (! $order) {
+
             Log::warning('KHQR webhook: order not found', ['ref' => $ref]);
 
             return response()->json(['error' => 'Order not found'], 404);
-        }
 
+        }
         if ($order->isPaid()) {
             // Idempotency — already marked paid, acknowledge anyway
             return response()->json(['message' => 'Already paid']);

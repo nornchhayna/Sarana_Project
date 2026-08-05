@@ -25,7 +25,7 @@
     .counter-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-3, #555B72); margin-bottom: 6px; }
     .counter-num { font-size: 20px; font-family: var(--mono, monospace); font-weight: 700; color: var(--text-1, #E8EAF2); }
     
-    .order-num-link { color: var(--text-1, #E8EAF2); text-decoration: none; font-weight: 700; font-family: var(--mono, monospace); }
+    .order-num-link { color: var(--text-1, #E8EAF2); text-decoration: none; font-weight: 700; font-family: var(--mono, monospace); white-space: nowrap; }
     .order-num-link:hover { color: var(--accent, #5B6EF5); }
 
     .action-group { display: flex; gap: 6px; justify-content: flex-end; }
@@ -33,11 +33,16 @@
     .btn-action:hover { border-color: var(--accent, #5B6EF5); color: var(--text-1, #E8EAF2); background: rgba(91, 110, 245, 0.1); }
 
     .table-wrap { overflow-x: auto; background: var(--card, #1A1E2B); border-radius: 12px; border: 1px solid var(--border, #252A3A); }
-    table { width: 100%; border-collapse: collapse; }
+    table { width: 100%; border-collapse: collapse; min-width: 800px; }
     thead th { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--text-3, #555B72); padding: 14px 22px; text-align: left; border-bottom: 1px solid var(--border, #252A3A); }
     tbody tr { border-bottom: 1px solid rgba(37, 42, 58, 0.5); }
     tbody tr:hover { background: rgba(255, 255, 255, 0.02); }
     tbody td { padding: 14px 22px; font-size: 13px; color: var(--text-2, #8B90A7); vertical-align: middle; }
+    
+    /* Only prevent wrapping on order number column */
+    tbody td:nth-child(1) {
+        white-space: nowrap;
+    }
     
     .status-badge { font-size: 10px; font-weight: 600; padding: 4px 10px; border-radius: 20px; font-family: monospace; display: inline-block; }
     .status-pending { background: rgba(245, 166, 35, 0.12); color: #F5A623; }
@@ -82,7 +87,7 @@
             @endif
         </div>
         
-        <a href="{{ route('admin.orders.export', request()->query()) }}" class="btn-secondary" style="background: var(--surface);">
+        <a href="{{ route('admin.orders.export', request()->query()) }}" class="btn-secondary" style="background: var(--text-2);">
             <i class="fa-solid fa-file-csv" style="color: var(--accent-2);"></i> Export CSV
         </a>
     </form>
@@ -117,7 +122,7 @@
                     {{ $order->created_at->format('d M Y, H:i') }}
                 </td>
                 <td>
-                    <span style="font-size: 12px; color: var(--text-2);">
+                    <span style="font-size: 12px; color: var(--text-1);">
                         {{ $order->payment->method ?? 'COD' }}
                     </span>
                 </td>

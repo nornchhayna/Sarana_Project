@@ -10,22 +10,38 @@
     <title>@yield('title', 'PhoneHub') — Premium Phones & Accessories</title>
 
     {{-- Fonts --}}
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Khmer:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=inter:300,400,500,600,700|space-grotesk:500,600,700" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="//unpkg.com/alpinejs" defer></script>
     {{-- Core CSS --}}
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class'
+      }
+    </script>
     <link rel="stylesheet" href="{{ asset('css/app.css') }}">
     <link rel="stylesheet" href="{{ asset('css/ecom.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/wish.css') }}">
     <link rel="stylesheet" href="{{ asset('css/cart.css') }}">
     <link rel="stylesheet" href="{{ asset('css/checkout.css') }}">
     <link rel="stylesheet" href="{{ asset('css/order.css') }}">
     <link rel="stylesheet" href="{{ asset('css/product.css') }}">
     <link rel="stylesheet" href="{{ asset('css/pay.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/contact.css') }}">
     
-    
+    <script>
+  (function () {
+    const stored = localStorage.getItem('theme'); // 'light' | 'dark' | null
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+    if (stored === 'dark' || (!stored && prefersDark)) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  })();
+</script>
     {{-- Page-specific CSS --}}
     @stack('styles')
 
@@ -57,7 +73,9 @@
         --shadow-lg: 0 10px 25px rgba(0, 0, 0, .08);
         --ease: .25s ease-in-out;
     }
-
+body {
+    font-family: 'Inter', 'Noto Sans Khmer', sans-serif;
+}
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html { scroll-behavior: smooth; }
     body { font-family: var(--font-body); font-size: 14px; color: var(--clr-body); background: var(--clr-white); line-height: 1.6; }
@@ -99,6 +117,13 @@
         @yield('content')
     </main>
 
+  <x-chatbot-widget
+    telegram="@Norn_Chhayna"
+    shop-name="Asahi Phone Shop"
+    products-url="/products"
+    orders-url="/orders"
+    :orders="auth()->check() ? auth()->user()->orders()->latest()->take(5)->get(['id','order_number','status','total','created_at']) : []"
+/>
     @include('layouts.partials.footer')
 
 

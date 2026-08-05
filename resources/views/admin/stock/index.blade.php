@@ -123,8 +123,8 @@
                     <th style="padding-left: 22px;">Product Asset Target</th>
                     <th>Variant Options</th>
                     <th>Current Level</th>
-                    <th>Quantity On Hand</th>
-                    <th>Low Warning Threshold</th>
+                    <th>Stock Quantity</th>
+                    <th>SKU</th>
                     <th style="text-align: right; padding-right: 22px;">Actions</th>
                 </tr>
             </thead>
@@ -147,19 +147,19 @@
                         @endif
                     </td>
                     <td>
-                        @if($stock->quantity == 0)
+                        @if($stock->stock == 0)
                             <span class="status-badge status-cancelled">Out Of Stock</span>
-                        @elseif($stock->quantity <= $stock->low_stock_threshold)
+                        @elseif($stock->stock <= 10)
                             <span class="status-badge status-pending">Low Stock Alert</span>
                         @else
                             <span class="status-badge status-paid">Healthy</span>
                         @endif
                     </td>
                     <td>
-                        <input type="number" name="stocks[{{ $index }}][quantity]" value="{{ old("stocks.{$index}.quantity", $stock->quantity) }}" class="inline-stock-input" min="0" required>
+                        <input type="number" name="stocks[{{ $index }}][stock]" value="{{ old("stocks.{$index}.stock", $stock->stock) }}" class="inline-stock-input" min="0" required>
                     </td>
                     <td>
-                        <input type="number" name="stocks[{{ $index }}][low_stock_threshold]" value="{{ old("stocks.{$index}.low_stock_threshold", $stock->low_stock_threshold) }}" class="inline-stock-input" min="0" required>
+                        <input type="number" name="stocks[{{ $index }}][sku]" value="{{ old("stocks.{$index}.sku", $stock->sku) }}" class="inline-stock-input" placeholder="SKU">
                     </td>
                     <td style="padding-right: 22px;">
                         <div class="action-group">

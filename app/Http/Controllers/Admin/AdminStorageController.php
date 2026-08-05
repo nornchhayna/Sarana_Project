@@ -44,9 +44,11 @@ class AdminStorageController extends Controller
             ->with('success', 'Storage option created successfully.');
     }
 
-    public function edit(PhoneStorage $storage)
+    public function edit($id)
     {
-        return view('admin.storage.edit', compact('storage'));
+        $storage = PhoneStorage::findOrFail($id);
+
+        return view('admin.storages.edit', compact('storage'));
     }
 
     public function update(Request $request, PhoneStorage $storage)
@@ -58,19 +60,19 @@ class AdminStorageController extends Controller
 
         $storage->update($validated);
 
-        return redirect()->route('admin.storage.index')
+        return redirect()->route('admin.storages.index')
             ->with('success', 'Storage option updated successfully.');
     }
 
     public function destroy(PhoneStorage $storage)
     {
         if ($storage->productStorages()->exists()) {
-            return back()->with('error', 'Cannot delete storage option assigned to products.');
-        }
+    return back()->with('error', 'Cannot delete storage option assigned to products.');
+}
 
         $storage->delete();
 
-        return redirect()->route('admin.storage.index')
+        return redirect()->route('admin.storages.index')
             ->with('success', 'Storage option deleted successfully.');
     }
 

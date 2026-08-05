@@ -1,326 +1,266 @@
 @extends('layouts.admin')
 
-@section('title', 'Edit Product: ' . $product->name)
-@section('page-title', 'Edit Product')
-
-@push('styles')
-<style>
-    /* Premium Admin Form Styling */
-    :root {
-        --clr-primary: #334A8E;
-        --clr-primary-dark: #223468;
-        --radius-card: 12px;
-        --radius-input: 8px;
-    }
-
-    .admin-card {
-        border: none;
-        border-radius: var(--radius-card);
-        box-shadow: 0 4px 20px rgba(0,0,0,0.04);
-        margin-bottom: 24px;
-        background: #fff;
-    }
-    .admin-card .card-header {
-        background: #fff;
-        border-bottom: 1px solid #f0f0f0;
-        padding: 20px 24px;
-        border-radius: var(--radius-card) var(--radius-card) 0 0;
-    }
-    .admin-card .card-header h6 { color: #2B3D5D; font-weight: 700; font-size: 16px; margin: 0; }
-    .admin-card .card-body { padding: 24px; }
-
-    /* Form Controls */
-    .form-label { font-weight: 600; color: #4a5568; font-size: 13px; margin-bottom: 8px; }
-    .form-control, .form-select {
-        border-radius: var(--radius-input); border: 1px solid #E2E8F0; padding: 10px 15px; font-size: 14px; box-shadow: none; transition: 0.2s;
-    }
-    .form-control:focus, .form-select:focus { border-color: var(--clr-primary); box-shadow: 0 0 0 3px rgba(51, 74, 142, 0.1); }
-    .input-group-text { background: #F8FAFC; border: 1px solid #E2E8F0; color: #64748B; font-weight: 600; }
-
-    /* Buttons & Switches */
-    .btn-primary-custom { background: var(--clr-primary); border-color: var(--clr-primary); color: #fff; padding: 12px 20px; border-radius: var(--radius-input); font-weight: 600; transition: all 0.2s; }
-    .btn-primary-custom:hover { background: var(--clr-primary-dark); border-color: var(--clr-primary-dark); transform: translateY(-1px); }
-    
-    .form-check-input:checked { background-color: var(--clr-primary); border-color: var(--clr-primary); }
-    .form-switch .form-check-input { width: 40px; height: 20px; cursor: pointer; }
-    .form-switch .form-check-label { margin-left: 10px; padding-top: 2px; cursor: pointer; font-weight: 500; color: #4a5568; }
-
-    /* Image Previews & Gallery */
-    .image-preview-wrapper {
-        width: 100%; height: 200px; border: 2px dashed #E2E8F0; border-radius: var(--radius-input);
-        display: flex; align-items: center; justify-content: center; background: #F8FAFC;
-        margin-bottom: 15px; overflow: hidden; position: relative;
-    }
-    .image-preview-wrapper img { max-width: 100%; max-height: 100%; object-fit: contain; }
-    .image-preview-icon { font-size: 40px; color: #CBD5E1; }
-    
-    /* Existing Gallery Images */
-    .gallery-grid { display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 20px; }
-    .gallery-item { position: relative; width: 100px; height: 100px; border-radius: var(--radius-input); border: 1px solid #E2E8F0; overflow: hidden; background: #fff; }
-    .gallery-item img { width: 100%; height: 100%; object-fit: cover; }
-    .btn-remove-img { 
-        position: absolute; top: 5px; right: 5px; width: 24px; height: 24px; 
-        background: rgba(220, 53, 69, 0.9); color: white; border: none; border-radius: 50%;
-        display: flex; align-items: center; justify-content: center; font-size: 14px; cursor: pointer; transition: 0.2s;
-    }
-    .btn-remove-img:hover { background: #c82333; transform: scale(1.1); }
-</style>
-@endpush
+@section('title', isset($product) ? 'Edit Product' : 'Create Product')
+@section('page-title', isset($product) ? 'Edit Product' : 'New Product')
 
 @section('content')
+<form method="POST"
+      action="{{ $product->exists ? route('admin.products.update', $product) : route('admin.products.store') }}"
+      enctype="multipart/form-data">
+    @csrf
+    @if($product->exists) @method('PUT') @endif
 
-{{-- ── ERROR/SUCCESS MESSAGES ── --}}
-@if(session('success'))
-    <div class="alert alert-success border-0 shadow-sm alert-dismissible fade show" role="alert">
-        <i class="bi bi-check-circle-fill me-2"></i>{{ session('success') }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-@endif
+    <div class="form-layout">
 
-<div class="row g-4">
-    {{-- ── Left Column ── --}}
-    <div class="col-lg-8">
-        
-        <form id="product-form" method="POST" action="{{ route('admin.products.update', $product) }}" enctype="multipart/form-data">
-            @csrf
-            @method('PUT')
-            
-            <div class="card admin-card">
-                <div class="card-header"><h6 class="mb-0">Basic Information</h6></div>
-                <div class="card-body">
-                    <div class="mb-4">
+        {{-- ── LEFT COLUMN ── --}}
+        <div class="main-col">
+
+            {{-- Basic Info --}}
+            <div class="admin-card">
+                <div class="admin-card-header"><i class="fa-solid fa-circle-info" style="color: var(--text-3);"></i> Basic Information</div>
+                <div class="admin-card-body">
+
+                    <div class="form-group">
                         <label class="form-label">Product Name <span class="text-danger">*</span></label>
-                        <input type="text" name="name" value="{{ old('name', $product->name) }}" class="form-control @error('name') is-invalid @enderror" required>
-                        @error('name')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        <input type="text" name="name" value="{{ old('name', $product->name ?? '') }}" class="form-control" placeholder="e.g. Apple iPhone 15 Pro Max" required>
                     </div>
-                    
-                    <div class="row g-4 mb-4">
-                        <div class="col-sm-6">
+
+                    <div class="form-row">
+                        <div>
                             <label class="form-label">SKU <span class="text-danger">*</span></label>
-                            <input type="text" name="sku" value="{{ old('sku', $product->sku) }}" class="form-control @error('sku') is-invalid @enderror" required>
-                            @error('sku')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            <input type="text" name="sku" value="{{ old('sku', $product->sku ?? '') }}" class="form-control font-mono" placeholder="APP-IP15-PM" required>
                         </div>
-                        <div class="col-sm-6">
+                        <div>
                             <label class="form-label">Slug</label>
-                            <input type="text" name="slug" value="{{ old('slug', $product->slug) }}" class="form-control" placeholder="Auto-generated if left empty">
+                            <input type="text" name="slug" value="{{ old('slug', $product->slug ?? '') }}" class="form-control font-mono" placeholder="Auto-generated if blank">
                         </div>
                     </div>
-                    
-                    <div class="mb-4">
+
+                    <div class="form-group">
                         <label class="form-label">Description</label>
-                        <textarea name="description" rows="5" class="form-control">{{ old('description', $product->description) }}</textarea>
+                        <textarea name="description" class="form-control" placeholder="Detailed product description...">{{ old('description', $product->description ?? '') }}</textarea>
                     </div>
-                    
-                    <div>
+
+                    <div class="form-group" style="margin-bottom: 0;">
                         <label class="form-label">Specifications (JSON or text)</label>
-                        <textarea name="specifications" rows="3" class="form-control font-monospace">{{ old('specifications', $product->specifications) }}</textarea>
+                        <textarea name="specifications" class="form-control font-mono" placeholder='{"Screen": "6.7 inch", "Camera": "48MP"}'>{{ old('specifications', $product->specifications ?? '') }}</textarea>
                     </div>
+
                 </div>
             </div>
 
-            <div class="card admin-card">
-                <div class="card-header"><h6 class="mb-0">Pricing</h6></div>
-                <div class="card-body row g-4">
-                    <div class="col-md-4">
+            {{-- Pricing --}}
+            <div class="admin-card">
+                <div class="admin-card-header"><i class="fa-solid fa-tag" style="color: var(--text-3);"></i> Pricing</div>
+                <div class="admin-card-body form-row-3" style="margin-bottom: 0;">
+
+                    <div>
                         <label class="form-label">Base Price <span class="text-danger">*</span></label>
                         <div class="input-group">
-                            <span class="input-group-text">$</span>
-                            <input type="number" name="base_price" value="{{ old('base_price', $product->base_price) }}" step="0.01" min="0" class="form-control @error('base_price') is-invalid @enderror" required>
+                            <span class="input-text left">$</span>
+                            <input type="number" name="base_price" value="{{ old('base_price', $product->base_price ?? '') }}" step="0.01" min="0" class="form-control with-left" required>
                         </div>
-                        @error('base_price')<div class="text-danger small mt-1">{{ $message }}</div>@enderror
                     </div>
-                    
-                    <div class="col-md-4">
+
+                    <div>
                         <label class="form-label">Sale Price</label>
                         <div class="input-group">
-                            <span class="input-group-text">$</span>
-                            <input type="number" name="sale_price" value="{{ old('sale_price', $product->sale_price) }}" step="0.01" min="0" class="form-control">
+                            <span class="input-text left">$</span>
+                            <input type="number" name="sale_price" value="{{ old('sale_price', $product->sale_price ?? '') }}" step="0.01" min="0" class="form-control with-left">
                         </div>
                     </div>
-                    
-                    <div class="col-md-4">
+
+                    <div>
                         <label class="form-label">Discount %</label>
                         <div class="input-group">
-                            <input type="number" name="discount" value="{{ old('discount', $product->discount) }}" step="0.01" min="0" max="100" class="form-control">
-                            <span class="input-group-text">%</span>
+                            <input type="number" name="discount" value="{{ old('discount', $product->discount ?? 0) }}" step="0.01" min="0" max="100" class="form-control with-right">
+                            <span class="input-text right">%</span>
                         </div>
                     </div>
+
                 </div>
             </div>
 
-            <div class="card admin-card">
-                <div class="card-header"><h6 class="mb-0">Variants</h6></div>
-                <div class="card-body">
-                    <div class="mb-4">
+            {{-- Variants --}}
+            <div class="admin-card">
+                <div class="admin-card-header"><i class="fa-solid fa-layer-group" style="color: var(--text-3);"></i> Product Variants</div>
+                <div class="admin-card-body">
+
+                    <div class="form-group">
                         <label class="form-label">Available Colors</label>
-                        <div class="d-flex flex-wrap gap-3 p-3 border rounded bg-light">
-                            @php $selectedColors = $product->productColors->pluck('color_id')->toArray(); @endphp
+                        <div class="checkbox-grid">
+                            @php $selectedColors = isset($product) ? $product->variants->pluck('color_id')->unique()->toArray() : []; @endphp
                             @foreach($colors as $color)
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" name="colors[]" value="{{ $color->id }}" id="color_{{ $color->id }}"
+                            <label class="check-item" for="color_{{ $color->id }}">
+                                <input type="checkbox" name="colors[]" value="{{ $color->id }}" id="color_{{ $color->id }}"
                                     {{ in_array($color->id, old('colors', $selectedColors)) ? 'checked' : '' }}>
-                                <label class="form-check-label d-flex align-items-center gap-2" for="color_{{ $color->id }}">
+                                <span class="check-label">
                                     @if($color->hex_code)
-                                        <span class="rounded-circle border shadow-sm" style="width:16px;height:16px;background:{{ $color->hex_code }};display:inline-block"></span>
+                                        <span class="color-swatch" style="background:{{ $color->hex_code }};"></span>
                                     @endif
                                     {{ $color->name }}
-                                </label>
-                            </div>
+                                </span>
+                            </label>
                             @endforeach
                         </div>
                     </div>
-                    
-                    <div>
+
+                    <div class="form-group">
                         <label class="form-label">Storage Options</label>
-                        <div class="d-flex flex-wrap gap-3 p-3 border rounded bg-light">
-                            @php $selectedStorages = $product->productStorages->pluck('phone_storage_id')->toArray(); @endphp
+                        <div class="checkbox-grid">
+                            @php $selectedStorages = isset($product) ? $product->variants->pluck('phone_storage_id')->unique()->toArray() : []; @endphp
                             @foreach($storages as $storage)
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" name="storages[]" value="{{ $storage->id }}" id="storage_{{ $storage->id }}"
+                            <label class="check-item" for="storage_{{ $storage->id }}">
+                                <input type="checkbox" name="storages[]" value="{{ $storage->id }}" id="storage_{{ $storage->id }}"
                                     {{ in_array($storage->id, old('storages', $selectedStorages)) ? 'checked' : '' }}>
-                                <label class="form-check-label fw-bold" for="storage_{{ $storage->id }}">{{ $storage->capacity }}</label>
-                            </div>
+                                <span class="check-label" style="font-weight: 600;">{{ $storage->capacity }}</span>
+                            </label>
                             @endforeach
                         </div>
                     </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Price by Storage</label>
+                        <p class="text-muted" style="font-size: 13px; margin-bottom: 10px;">
+                            Set one price per storage size — it applies to every color at that storage.
+                        </p>
+                        <div id="storage-prices-container" style="display: none;">
+                            <!-- Storage price inputs will be dynamically added here -->
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label">Variant Details</label>
+                        <p class="text-muted" style="font-size: 13px; margin-bottom: 10px;">
+                            Stock and SKU for each color + storage combination. Price is set above, per storage.
+                        </p>
+                        <div id="variants-container" style="display: none;">
+                            <!-- Variants will be dynamically added here -->
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="margin-top: 20px;">
+                        <label class="form-label">Color Images</label>
+                        <p class="text-muted" style="font-size: 13px; margin-bottom: 10px;">
+                            Upload 1 image for each color.
+                        </p>
+                        <div id="color-images-container" style="display: none;">
+                            <!-- Color image upload sections will be dynamically added here -->
+                        </div>
+                    </div>
+
                 </div>
             </div>
-            
-            </form>
+        </div>
 
-        <div class="card admin-card border-primary">
-            <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                <h6 class="mb-0 text-primary">Manage Existing Gallery Images</h6>
-            </div>
-            <div class="card-body bg-light rounded-bottom">
-                @if(is_array($product->images) && count($product->images) > 0)
-                    <div class="gallery-grid">
-                        @foreach($product->images as $index => $img)
-                            <div class="gallery-item shadow-sm">
-                                <img src="{{ asset('storage/'.$img) }}" alt="Gallery Image">
-                                <form action="{{ route('admin.products.removeImage', $product) }}" method="POST" onsubmit="return confirm('Remove this image?');">
-                                    @csrf
-                                    <input type="hidden" name="index" value="{{ $index }}">
-                                    <button type="submit" class="btn-remove-img" title="Remove Image"><i class="bi bi-x-lg"></i></button>
-                                </form>
-                            </div>
-                        @endforeach
+        {{-- ── RIGHT COLUMN ── --}}
+        <div class="side-col">
+
+            {{-- Publish Settings --}}
+            <div class="admin-card">
+                <div class="admin-card-header"><i class="fa-solid fa-rocket" style="color: var(--accent-4);"></i> Publish</div>
+                <div class="admin-card-body">
+
+                    @foreach([
+                        ['is_active',   'Active (Visible on store)'],
+                        ['is_featured', 'Featured Product'],
+                        ['is_new',      'Mark as New Arrival'],
+                        ['is_pre_order','Allow Pre-orders'],
+                    ] as [$name, $label])
+                    <div class="switch-wrap">
+                        <span class="switch-label">{{ $label }}</span>
+                        <label class="switch">
+                            <input type="checkbox" name="{{ $name }}" value="1" {{ old($name, ($product->$name ?? false) ? '1' : '') ? 'checked' : '' }}>
+                            <span class="slider"></span>
+                        </label>
                     </div>
-                    <small class="text-muted"><i class="bi bi-info-circle me-1"></i>To add new images, use the media uploader on the right and click "Update Product".</small>
-                @else
-                    <div class="text-center py-4 text-muted">
-                        <i class="bi bi-images fs-1 mb-2 d-block text-black-50"></i>
-                        No gallery images attached to this product yet.
+                    @endforeach
+
+                    <div class="btn-group-vertical">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fa-solid fa-floppy-disk"></i> {{ isset($product) ? 'Update Product' : 'Save Product' }}
+                        </button>
+                        <a href="{{ route('admin.products.index') }}" class="btn btn-secondary">Cancel</a>
                     </div>
-                @endif
+                </div>
             </div>
+
+            {{-- Organization --}}
+            <div class="admin-card">
+                <div class="admin-card-header"><i class="fa-solid fa-folder-tree" style="color: var(--text-3);"></i> Organization</div>
+                <div class="admin-card-body">
+
+                    <div class="form-group">
+                        <label class="form-label">Category <span class="text-danger">*</span></label>
+                        <select name="category_id" class="form-select" required>
+                            <option value="">Select Category…</option>
+                            @foreach($categories as $cat)
+                                <option value="{{ $cat->id }}" @selected(old('category_id', $product->category_id ?? '') == $cat->id)>{{ $cat->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Brand <span class="text-danger">*</span></label>
+                        <select name="brand_id" class="form-select" required>
+                            <option value="">Select Brand…</option>
+                            @foreach($brands as $brand)
+                                <option value="{{ $brand->id }}" @selected(old('brand_id', $product->brand_id ?? '') == $brand->id)>{{ $brand->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Phone Model</label>
+                        <select name="phone_model_id" class="form-select">
+                            <option value="">Select Model…</option>
+                            @foreach($phoneModels as $model)
+                                <option value="{{ $model->id }}" @selected(old('phone_model_id', $product->phone_model_id ?? '') == $model->id)>{{ $model->brand->name }} {{ $model->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label">Sort Order</label>
+                        <input type="number" name="sort_order" value="{{ old('sort_order', $product->sort_order ?? 0) }}" class="form-control font-mono" placeholder="0">
+                    </div>
+
+                </div>
+            </div>
+
+            {{-- Media --}}
+            <div class="admin-card">
+                <div class="admin-card-header"><i class="fa-solid fa-images" style="color: var(--text-3);"></i> Media</div>
+                <div class="admin-card-body">
+
+                    <label class="form-label">Main Thumbnail</label>
+                    <div class="image-preview-wrapper" id="thumbnail-preview-container">
+                        @if(isset($product) && $product->thumbnail)
+                            <img id="thumbnail-preview" src="{{ asset('storage/'.$product->thumbnail) }}" alt="Thumbnail">
+                        @else
+                            <i id="thumbnail-icon" class="fa-regular fa-image image-preview-icon"></i>
+                            <img id="thumbnail-preview" src="" alt="Thumbnail" style="display: none;">
+                        @endif
+                    </div>
+                    <input type="file" name="thumbnail" id="thumbnail-input" class="form-control" accept="image/*" style="margin-bottom: 20px;">
+
+                    <div style="margin-bottom: 0;">
+                        <label class="form-label">Gallery Images</label>
+                        <input type="file" name="images[]" class="form-control" accept="image/*" multiple>
+                        <div class="form-text">Hold CTRL/CMD to select multiple files.</div>
+                    </div>
+
+                </div>
+            </div>
+
         </div>
     </div>
-
-    {{-- ── Right Column ── --}}
-    <div class="col-lg-4">
-        
-        <div class="card admin-card">
-            <div class="card-header"><h6 class="mb-0">Publish Status</h6></div>
-            <div class="card-body d-flex flex-column gap-3">
-                
-                @foreach([
-                    ['is_active',   'Active (Visible on store)'],
-                    ['is_featured', 'Featured Product'],
-                    ['is_new',      'Mark as New Arrival'],
-                    ['is_pre_order','Allow Pre-orders'],
-                ] as [$name, $label])
-                <div class="form-check form-switch d-flex align-items-center p-0">
-                    <input class="form-check-input m-0" type="checkbox" name="{{ $name }}" id="{{ $name }}" value="1" form="product-form"
-                        {{ old($name, $product->$name ?? false) ? 'checked' : '' }}>
-                    <label class="form-check-label" for="{{ $name }}">{{ $label }}</label>
-                </div>
-                @endforeach
-
-                <hr class="my-2">
-                
-                <div class="d-grid gap-2">
-                    <button type="submit" form="product-form" class="btn btn-primary-custom">
-                        <i class="bi bi-save me-2"></i>Update Product
-                    </button>
-                    <a href="{{ route('admin.products.index') }}" class="btn btn-light border fw-bold text-secondary">Cancel</a>
-                </div>
-            </div>
-        </div>
-
-        <div class="card admin-card">
-            <div class="card-header"><h6 class="mb-0">Organization</h6></div>
-            <div class="card-body">
-                <div class="mb-3">
-                    <label class="form-label">Category <span class="text-danger">*</span></label>
-                    <select name="category_id" form="product-form" class="form-select @error('category_id') is-invalid @enderror" required>
-                        <option value="">Select Category…</option>
-                        @foreach($categories as $cat)
-                            <option value="{{ $cat->id }}" @selected(old('category_id', $product->category_id) == $cat->id)>{{ $cat->name }}</option>
-                        @endforeach
-                    </select>
-                    @error('category_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                </div>
-                
-                <div class="mb-3">
-                    <label class="form-label">Brand <span class="text-danger">*</span></label>
-                    <select name="brand_id" form="product-form" class="form-select @error('brand_id') is-invalid @enderror" required>
-                        <option value="">Select Brand…</option>
-                        @foreach($brands as $brand)
-                            <option value="{{ $brand->id }}" @selected(old('brand_id', $product->brand_id) == $brand->id)>{{ $brand->name }}</option>
-                        @endforeach
-                    </select>
-                    @error('brand_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                </div>
-                
-                <!-- <div class="mb-3">
-                    <label class="form-label">Phone Model <span class="text-danger">*</span></label>
-                    <select name="phone_model_id" form="product-form" class="form-select @error('phone_model_id') is-invalid @enderror" required>
-                        <option value="">Select Model…</option>
-                        @foreach($phoneModels as $model)
-                            <option value="{{ $model->id }}" @selected(old('phone_model_id', $product->phone_model_id) == $model->id)>{{ $model->brand->name }} {{ $model->name }}</option>
-                        @endforeach
-                    </select>
-                    @error('phone_model_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                </div> -->
-                
-                <div>
-                    <label class="form-label">Sort Order</label>
-                    <input type="number" name="sort_order" form="product-form" value="{{ old('sort_order', $product->sort_order) }}" class="form-control" placeholder="0">
-                </div>
-            </div>
-        </div>
-
-        <div class="card admin-card">
-            <div class="card-header"><h6 class="mb-0">Add Media</h6></div>
-            <div class="card-body">
-                
-                <label class="form-label">Replace Thumbnail</label>
-                <div class="image-preview-wrapper" id="thumbnail-preview-container">
-                    @if($product->thumbnail)
-                        <img id="thumbnail-preview" src="{{ asset('storage/'.$product->thumbnail) }}" alt="Current Thumbnail">
-                    @else
-                        <i id="thumbnail-icon" class="bi bi-image image-preview-icon"></i>
-                        <img id="thumbnail-preview" src="" alt="New Thumbnail" style="display: none;">
-                    @endif
-                </div>
-                <input type="file" name="thumbnail" id="thumbnail-input" form="product-form" class="form-control mb-4" accept="image/*">
-
-                <div>
-                    <label class="form-label">Add to Gallery</label>
-                    <input type="file" name="images[]" form="product-form" class="form-control" accept="image/*" multiple>
-                    <div class="form-text text-muted mt-2"><i class="bi bi-info-circle me-1"></i>Uploading files here will ADD them to the existing gallery.</div>
-                </div>
-            </div>
-        </div>
-
-    </div>
-</div>
+</form>
 @endsection
 
 @push('scripts')
 <script>
-    // Live Image Preview for Replacing Thumbnail
+    // Live Image Preview for Thumbnail
     document.getElementById('thumbnail-input').addEventListener('change', function(event) {
         const file = event.target.files[0];
         if (file) {
@@ -328,13 +268,202 @@
             reader.onload = function(e) {
                 const previewImg = document.getElementById('thumbnail-preview');
                 const icon = document.getElementById('thumbnail-icon');
-                
+
                 previewImg.src = e.target.result;
                 previewImg.style.display = 'block';
                 if(icon) icon.style.display = 'none';
             }
             reader.readAsDataURL(file);
         }
+    });
+
+    // Dynamic Variant Generation
+    document.addEventListener('DOMContentLoaded', function() {
+        const colorCheckboxes = document.querySelectorAll('input[name="colors[]"]');
+        const storageCheckboxes = document.querySelectorAll('input[name="storages[]"]');
+        const variantsContainer = document.getElementById('variants-container');
+        const storagePricesContainer = document.getElementById('storage-prices-container');
+
+        // Load existing variants
+        const existingVariants = @json(isset($product) ? $product->variants->toArray() : []);
+
+        function getSelectedStorages() {
+            return Array.from(storageCheckboxes)
+                .filter(cb => cb.checked)
+                .map(cb => ({
+                    id: cb.value,
+                    name: cb.closest('.check-item').querySelector('.check-label').textContent.trim()
+                }));
+        }
+
+        function getSelectedColors() {
+            return Array.from(colorCheckboxes)
+                .filter(cb => cb.checked)
+                .map(cb => ({
+                    id: cb.value,
+                    name: cb.closest('.check-item').querySelector('.check-label').textContent.trim()
+                }));
+        }
+
+        // One price input per selected storage size, prefilled from any existing
+        // variant at that storage — applies to every color at that storage
+        function generateStoragePrices() {
+            const selectedStorages = getSelectedStorages();
+
+            if (selectedStorages.length === 0) {
+                storagePricesContainer.style.display = 'none';
+                storagePricesContainer.innerHTML = '';
+                return;
+            }
+
+            // Preserve prices already typed in before regenerating
+            const typedValues = {};
+            storagePricesContainer.querySelectorAll('[data-storage-price]').forEach(input => {
+                typedValues[input.dataset.storagePrice] = input.value;
+            });
+
+            storagePricesContainer.style.display = 'block';
+            storagePricesContainer.innerHTML = '';
+
+            selectedStorages.forEach(storage => {
+                const existingForStorage = existingVariants.find(v => v.phone_storage_id == storage.id);
+                const prefill = typedValues[storage.id] || existingForStorage?.price || '';
+
+                const row = document.createElement('div');
+                row.style.cssText = 'display: flex; align-items: center; gap: 10px; margin-bottom: 8px;';
+                row.innerHTML = `
+                    <div style="flex: 0 0 100px; font-weight: 600; font-size: 13px;">${storage.name}</div>
+                    <div class="input-group" style="max-width: 180px;">
+                        <span class="input-text left">$</span>
+                        <input type="number" step="0.01" min="0" class="form-control with-left"
+                               placeholder="0.00" data-storage-price="${storage.id}" value="${prefill}" required>
+                    </div>
+                `;
+                storagePricesContainer.appendChild(row);
+            });
+
+            storagePricesContainer.querySelectorAll('[data-storage-price]').forEach(input => {
+                input.addEventListener('input', generateVariants);
+            });
+        }
+
+        function generateVariants() {
+            const selectedColors = getSelectedColors();
+            const selectedStorages = getSelectedStorages();
+
+            if (selectedColors.length === 0 || selectedStorages.length === 0) {
+                variantsContainer.style.display = 'none';
+                variantsContainer.innerHTML = '';
+                return;
+            }
+
+            variantsContainer.style.display = 'block';
+            variantsContainer.innerHTML = '';
+
+            let variantIndex = 0;
+            selectedColors.forEach(color => {
+                selectedStorages.forEach(storage => {
+                    // Find existing variant for this combination (for stock/SKU prefill)
+                    const existingVariant = existingVariants.find(v =>
+                        v.color_id == color.id && v.phone_storage_id == storage.id
+                    );
+
+                    const priceInput = storagePricesContainer.querySelector(`[data-storage-price="${storage.id}"]`);
+                    const price = priceInput ? priceInput.value : (existingVariant?.price || '');
+
+                    const variantRow = document.createElement('div');
+                    variantRow.className = 'variant-row';
+                    variantRow.style.cssText = 'display: flex; gap: 10px; align-items: center; padding: 10px; border: 1px solid var(--border); border-radius: 6px; margin-bottom: 8px; background: var(--surface);';
+
+                    variantRow.innerHTML = `
+                        <div style="flex: 0 0 150px; font-weight: 600; font-size: 13px;">
+                            ${color.name} + ${storage.name}
+                        </div>
+                        <div style="flex: 1;">
+                            <input type="hidden" name="variants[${variantIndex}][color_id]" value="${color.id}">
+                            <input type="hidden" name="variants[${variantIndex}][phone_storage_id]" value="${storage.id}">
+                            <input type="hidden" name="variants[${variantIndex}][price]" value="${price}">
+                            <div style="display: flex; gap: 8px; align-items: flex-end;">
+                                <div style="flex: 0 0 90px; font-size: 12px; color: var(--text-2);">
+                                    $${price || '0.00'}
+                                </div>
+                                <div style="flex: 0 0 80px;">
+                                    <label style="font-size: 11px; color: var(--text-2);">Stock</label>
+                                    <input type="number" name="variants[${variantIndex}][stock]" min="0"
+                                           class="form-control" placeholder="0" value="${existingVariant?.stock || ''}" required>
+                                </div>
+                                <div style="flex: 1;">
+                                    <label style="font-size: 11px; color: var(--text-2);">SKU</label>
+                                    <input type="text" name="variants[${variantIndex}][sku]"
+                                           class="form-control font-mono" placeholder="SKU-${color.id}-${storage.id}" value="${existingVariant?.sku || ''}">
+                                </div>
+                            </div>
+                        </div>
+                    `;
+
+                    variantsContainer.appendChild(variantRow);
+                    variantIndex++;
+                });
+            });
+        }
+
+        // Generate color image upload sections (1 image per color)
+        function generateColorImageSections() {
+            const selectedColors = getSelectedColors();
+
+            const container = document.getElementById('color-images-container');
+
+            if (selectedColors.length === 0) {
+                container.style.display = 'none';
+                container.innerHTML = '';
+                return;
+            }
+
+            container.style.display = 'block';
+            container.innerHTML = '';
+
+            // Load existing color images (one per color)
+            const existingColorImages = @json(isset($product) ? $product->variantImages->keyBy('color_id') : []);
+
+            selectedColors.forEach(color => {
+                const existing = existingColorImages[color.id] || null;
+
+                const colorSection = document.createElement('div');
+                colorSection.className = 'color-image-section';
+                colorSection.style.cssText = 'margin-bottom: 15px; padding: 15px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface);';
+
+                colorSection.innerHTML = `
+                    <div style="font-weight: 600; margin-bottom: 10px; color: var(--text-1);">
+                        ${color.name} Image
+                    </div>
+                    <input type="file" name="color_images[${color.id}]" accept="image/*" class="form-control">
+                    ${existing ? `<small style="color: var(--text-2); font-size: 10px;">Current: ${existing.image.split('/').pop()}</small>` : ''}
+                `;
+
+                container.appendChild(colorSection);
+            });
+        }
+
+        colorCheckboxes.forEach(cb => {
+            cb.addEventListener('change', function() {
+                generateColorImageSections();
+                generateVariants();
+            });
+        });
+
+        storageCheckboxes.forEach(cb => {
+            cb.addEventListener('change', function() {
+                generateStoragePrices();
+                generateVariants();
+            });
+        });
+
+        // Initial generation on page load
+        console.log('Running initial generation');
+        generateStoragePrices();
+        generateVariants();
+        generateColorImageSections();
+        console.log('Initial generation complete');
     });
 </script>
 @endpush

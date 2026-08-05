@@ -56,33 +56,33 @@ class AdminModelController extends Controller
             ->with('success', 'Phone model created successfully.');
     }
 
-   public function edit(PhoneModel $phoneModel)
-{
-    $brands = Brand::where('is_active', true)->get();
+    public function edit(PhoneModel $phoneModel)
+    {
+        $brands = Brand::where('is_active', true)->get();
 
-    return view('admin.models.edit', [
-        'model' => $phoneModel,
-        'brands' => $brands,
-    ]);
-}
+        return view('admin.models.edit', [
+            'model' => $phoneModel,
+            'brands' => $brands,
+        ]);
+    }
 
-public function update(Request $request, PhoneModel $phoneModel)
-{
-    $validated = $request->validate([
-        'brand_id' => 'required|exists:brands,id',
-        'name' => 'required|string|max:255',
-        'description' => 'nullable|string',
-        'is_active' => 'boolean',
-    ]);
+    public function update(Request $request, PhoneModel $phoneModel)
+    {
+        $validated = $request->validate([
+            'brand_id' => 'required|exists:brands,id',
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'is_active' => 'boolean',
+        ]);
 
-    $validated['slug'] = Str::slug($validated['name']);
+        $validated['slug'] = Str::slug($validated['name']);
 
-    $phoneModel->update($validated);
+        $phoneModel->update($validated);
 
-    return redirect()
-        ->route('admin.models.index')
-        ->with('success', 'Phone model updated successfully.');
-}
+        return redirect()
+            ->route('admin.models.index')
+            ->with('success', 'Phone model updated successfully.');
+    }
 
     public function destroy(PhoneModel $model)
     {

@@ -56,9 +56,9 @@ class AdminContactController extends Controller
             'reply' => $validated['reply'],
             'status' => 'replied',
             'replied_at' => now(),
+            'is_seen_by_customer' => false, // customer hasn't seen it yet
         ]);
 
-        // Send reply email
         try {
             Mail::raw($validated['reply'], function ($message) use ($contact) {
                 $message->to($contact->email, $contact->name)

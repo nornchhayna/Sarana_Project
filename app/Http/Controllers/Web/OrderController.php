@@ -5,10 +5,13 @@ namespace App\Http\Controllers\Web;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\Payment;
+use App\Models\Review;
 use App\Services\OrderFulfillmentService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
-use App\Models\Review;
+use App\Services\BakongKHQRService;
+use Carbon\Carbon;
+use App\Models\Merchantbakongkhqr;
 
 class OrderController extends Controller
 {
@@ -40,28 +43,28 @@ class OrderController extends Controller
     }
 
     // ─── View single order ──────────────────────────────────────────────────
-public function show(Order $order)
-{
-    abort_if($order->user_id !== auth()->id(), 403);
-    $order->load(['items.product', 'payment', 'invoice']);
+    public function show(Order $order)
+    {
+        abort_if($order->user_id !== auth()->id(), 403);
+        $order->load(['items.product', 'payment', 'invoice']);
 
-    $steps = [
-        'pending' => ['label' => 'Order Placed', 'index' => 1],
-        'confirmed' => ['label' => 'Payment Verified', 'index' => 2],
-        'processing' => ['label' => 'Processing', 'index' => 3],
-        'shipped' => ['label' => 'Shipped', 'index' => 4],
-        'delivered' => ['label' => 'Delivered', 'index' => 5],
-    ];
+        $steps = [
+            'pending' => ['label' => 'Order Placed', 'index' => 1],
+            'confirmed' => ['label' => 'Payment Verified', 'index' => 2],
+            'processing' => ['label' => 'Processing', 'index' => 3],
+            'shipped' => ['label' => 'Shipped', 'index' => 4],
+            'delivered' => ['label' => 'Delivered', 'index' => 5],
+        ];
 
-    $currentStep = $steps[$order->status]['index'] ?? 1;
+        $currentStep = $steps[$order->status]['index'] ?? 1;
 
-    $reviewedProductIds = \App\Models\Review::where('user_id', auth()->id())
-        ->where('order_id', $order->id)
-        ->pluck('product_id')
-        ->toArray();
+        $reviewedProductIds = Review::where('user_id', auth()->id())
+            ->where('order_id', $order->id)
+            ->pluck('product_id')
+            ->toArray();
 
-    return view('web.orders.show', compact('order', 'steps', 'currentStep', 'reviewedProductIds'));
-}
+        return view('web.orders.show', compact('order', 'steps', 'currentStep', 'reviewedProductIds'));
+    }
     // ─── Cancel order ───────────────────────────────────────────────────────
 
     public function cancel(Order $order)
@@ -101,39 +104,58 @@ public function show(Order $order)
         return $pdf->download('invoice-'.$invoice->invoice_number.'.pdf');
     }
 
-    public function showKHQR(Order $order, BakongKHQRService $khqr)
-    {
-        abort_if($order->user_id !== auth()->id(), 403);
-        abort_if(! in_array($order->status, ['pending', 'confirmed']), 422);
+ // add this import at the top
 
-        // Generate / retrieve QR
-        $payment = $order->payments()
-            ->where('method', 'khqr')
-            ->where('status', 'pending')
-            ->whereNotNull('khqr_md5')
-            ->where(fn ($q) => $q->whereNull('khqr_expires_at')->orWhere('khqr_expires_at', '>', now()))
-            ->first();
+public function showKHQR(Order $order, BakongKHQRService $khqr)
+{
+    abort_if($order->user_id !== auth()->id(), 403);
+    abort_if(! in_array($order->status, ['pending', 'confirmed']), 422);
 
-        if (! $payment) {
-            $qrData = $khqr->generateForOrder($order);
+    $payment = $order->payments()
+        ->where('method', 'khqr')
+        ->where('status', 'pending')
+        ->whereNotNull('khqr_md5')
+        ->where(fn ($q) => $q->whereNull('khqr_expires_at')->orWhere('khqr_expires_at', '>', now()))
+        ->first();
 
-            $payment = Payment::create([
-                'order_id' => $order->id,
-                'method' => 'khqr',
-                'status' => 'pending',
-                'amount' => $order->total,
-                'currency' => config('bakong.currency') === 840 ? 'USD' : 'KHR',
-                'khqr_string' => $qrData['qr_string'],
-                'khqr_md5' => $qrData['md5'],
-                'khqr_expires_at' => Carbon::now()->addMinutes(15),
-            ]);
+    if (! $payment) {
+        $bakong = Merchantbakongkhqr::first();
+
+        if ($bakong && ! empty($bakong->bakongAccountID)) {
+            $khqr->setMerchantConfig($bakong);
         }
 
-        return view('orders.khqr-pay', [
-            'order' => $order,
-            'qrString' => $payment->khqr_string,
-            'md5' => $payment->khqr_md5,
-            'expiresAt' => $payment->khqr_expires_at?->toIso8601String(),
+        $qrData = $khqr->generateKHQR([
+            'amount'         => $order->total,
+            'ref'            => $order->order_number,
+            'ttl_seconds'    => BakongKHQRService::DEFAULT_TTL_SECONDS,
+            'store_label'    => config('bakong.merchant_name', 'Online Store'),
+            'terminal_label' => 'Online',
+        ]);
+
+        if (! $qrData['success']) {
+            return back()->with('error', $qrData['error'] ?? 'Unable to generate payment QR code.');
+        }
+
+        $payment = Payment::create([
+            'order_id' => $order->id,
+            'method' => 'khqr',
+            'status' => 'pending',
+            'amount' => $order->total,
+            'currency' => (int) config('bakong.currency', 840) === 840 ? 'USD' : 'KHR',
+            'khqr_string' => $qrData['qr_string'],
+            'khqr_md5' => $qrData['md5'],
+            'khqr_expires_at' => Carbon::now()->addSeconds(BakongKHQRService::DEFAULT_TTL_SECONDS),
         ]);
     }
+
+    $khqrData = [
+        'success' => true,
+        'qr_string' => $payment->khqr_string,
+        'md5' => $payment->khqr_md5,
+        'error' => null,
+    ];
+
+    return view('web.payment.index', compact('order', 'khqrData'));
+}
 }

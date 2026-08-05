@@ -10,11 +10,12 @@ class Contact extends Model
     protected $fillable = [
         'user_id', 'name', 'email', 'phone',
         'subject', 'message', 'status',
-        'reply', 'replied_at',
+        'reply', 'replied_at', 'is_seen_by_customer',
     ];
 
     protected $casts = [
         'replied_at' => 'datetime',
+        'is_seen_by_customer' => 'boolean',
     ];
 
     public function user(): BelongsTo

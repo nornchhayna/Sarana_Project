@@ -4,10 +4,6 @@ namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Validation\Rule;
-use Illuminate\Validation\Rules\Password;
 
 class ProfileController extends Controller
 {
@@ -16,86 +12,64 @@ class ProfileController extends Controller
         $this->middleware('auth');
     }
 
-    // ─── Show profile ───────────────────────────────────────────────────────
-
-    public function show()
+    /**
+     * Display the authenticated user's profile.
+     */
+    public function index(Request $request)
     {
-        $user = auth()->user();
-
-        return view('web.profile.show', compact('user'));
+        return view('web.profile.index', [
+            'user' => $request->user(),
+        ]);
     }
 
-    // ─── Edit profile form ──────────────────────────────────────────────────
-
-    public function edit()
+    /**
+     * Show the form for editing the authenticated user's profile.
+     */
+    public function edit(Request $request)
     {
-        $user = auth()->user();
-
-        return view('web.profile.edit', compact('user'));
+        return view('web.profile.edit', [
+            'user' => $request->user(),
+        ]);
     }
 
-    // ─── Update profile ─────────────────────────────────────────────────────
-
+    /**
+     * Update the authenticated user's profile, including address fields
+     * that will later be reused to pre-fill the checkout form.
+     */
     public function update(Request $request)
     {
-        $user = auth()->user();
+        $user = $request->user();
 
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'phone' => ['nullable', 'string', 'max:20', Rule::unique('users', 'phone')->ignore($user->id)],
-            'gender' => 'nullable|in:male,female,other',
-            'date_of_birth' => 'nullable|date|before:today',
-            'address' => 'nullable|string|max:500',
-            'city' => 'nullable|string|max:100',
-            'province' => 'nullable|string|max:100',
-            'avatar' => 'nullable|image|max:2048',
+            'name' => ['required', 'string', 'max:255'],
+            'phone' => ['nullable', 'string', 'max:30'],
+            'gender' => ['nullable', 'in:male,female,other'],
+            'date_of_birth' => ['nullable', 'date'],
+            'avatar' => ['nullable', 'image', 'max:2048'],
+
+            // Address fields — reused by checkout
+            'address' => ['nullable', 'string', 'max:255'],
+            'city' => ['nullable', 'string', 'max:120'],
+            'province' => ['nullable', 'string', 'max:120'],
         ]);
 
-        // Handle avatar upload
         if ($request->hasFile('avatar')) {
-            // Remove old avatar
-            if ($user->avatar) {
-                Storage::disk('public')->delete($user->avatar);
-            }
             $validated['avatar'] = $request->file('avatar')->store('avatars', 'public');
         }
 
         $user->update($validated);
 
-        return back()->with('success', 'Profile updated successfully.');
+        return back()->with('status', 'Profile updated successfully.');
     }
 
-    // ─── Change password ────────────────────────────────────────────────────
-
-    public function changePassword(Request $request)
+    /**
+     * Remove the user's avatar.
+     */
+    public function removeAvatar(Request $request)
     {
-        $request->validate([
-            'current_password' => 'required|string',
-            'password' => ['required', 'confirmed', Password::defaults()],
-        ]);
+        $user = $request->user();
+        $user->update(['avatar' => null]);
 
-        $user = auth()->user();
-
-        if (! Hash::check($request->current_password, $user->password)) {
-            return back()->withErrors(['current_password' => 'Current password is incorrect.']);
-        }
-
-        $user->update(['password' => Hash::make($request->password)]);
-
-        return back()->with('success', 'Password changed successfully.');
-    }
-
-    // ─── Remove avatar ──────────────────────────────────────────────────────
-
-    public function removeAvatar()
-    {
-        $user = auth()->user();
-
-        if ($user->avatar) {
-            Storage::disk('public')->delete($user->avatar);
-            $user->update(['avatar' => null]);
-        }
-
-        return back()->with('success', 'Avatar removed.');
+        return back()->with('status', 'Avatar removed.');
     }
 }

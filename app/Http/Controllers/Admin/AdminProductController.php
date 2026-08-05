@@ -69,7 +69,7 @@ class AdminProductController extends Controller
             'name' => 'required|string|max:255',
             'category_id' => 'required|exists:categories,id',
             'brand_id' => 'required|exists:brands,id',
-            'phone_model_id' => 'required|exists:phone_models,id',
+            'phone_model_id' => 'nullable|exists:phone_models,id',
             'sku' => 'required|string|unique:products,sku',
             'description' => 'nullable|string',
             'specifications' => 'nullable|string',
@@ -90,6 +90,14 @@ class AdminProductController extends Controller
             'storages' => 'nullable|array',
             'storages.*.id' => 'exists:phone_storages,id',
             'storages.*.price_adjustment' => 'nullable|numeric',
+            'variants' => 'nullable|array',
+            'variants.*.color_id' => 'required|exists:colors,id',
+            'variants.*.phone_storage_id' => 'required|exists:phone_storages,id',
+            'variants.*.price' => 'required|numeric|min:0',
+            'variants.*.stock' => 'required|integer|min:0',
+            'variants.*.sku' => 'nullable|string',
+            'color_images' => 'nullable|array',
+            'color_images.*' => 'image|max:2048',
         ]);
 
         $validated['slug'] = Str::slug($validated['name']);
@@ -135,7 +143,36 @@ class AdminProductController extends Controller
                 }
             }
 
-            // Initialize stock entries
+            // Create product variants
+            if (! empty($validated['variants'])) {
+                foreach ($validated['variants'] as $variantData) {
+                    $product->variants()->create([
+                        'color_id' => $variantData['color_id'],
+                        'phone_storage_id' => $variantData['phone_storage_id'],
+                        'price' => $variantData['price'],
+                        'stock' => $variantData['stock'],
+                        'sku' => $variantData['sku'] ?? null,
+                        'is_active' => true,
+                    ]);
+                }
+            }
+
+            // Handle color-specific images
+            if (! empty($validated['color_images'])) {
+                foreach ($validated['color_images'] as $colorId => $imageFile) {
+                    if ($imageFile && $imageFile->isValid()) {
+                        $path = $imageFile->store('products', 'public');
+                        $product->variantImages()->create([
+                            'color_id' => $colorId,
+                            'image' => $path,
+                            'is_primary' => true,
+                            'sort_order' => 0,
+                        ]);
+                    }
+                }
+            }
+
+            // Initialize stock entries (legacy - for backward compatibility)
             $colorIds = collect($validated['colors'] ?? [])->map(fn ($c) => is_array($c) ? $c['id'] : $c)->toArray();
             $storageIds = collect($validated['storages'] ?? [])->map(fn ($s) => is_array($s) ? $s['id'] : $s)->toArray();
 
@@ -197,12 +234,13 @@ class AdminProductController extends Controller
 
     public function update(Request $request, Product $product)
     {
+
         // FIX: Added variant validation so users can update Colors & Storages!
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'category_id' => 'required|exists:categories,id',
             'brand_id' => 'required|exists:brands,id',
-            'phone_model_id' => 'required|exists:phone_models,id',
+            'phone_model_id' => 'nullable|exists:phone_models,id',
             'sku' => 'required|string|unique:products,sku,'.$product->id,
             'description' => 'nullable|string',
             'specifications' => 'nullable|string',
@@ -219,9 +257,20 @@ class AdminProductController extends Controller
             'images.*' => 'image|max:2048',
             'colors' => 'nullable|array',
             'storages' => 'nullable|array',
+            'variants' => 'nullable|array',
+            'variants.*.color_id' => 'required|exists:colors,id',
+            'variants.*.phone_storage_id' => 'required|exists:phone_storages,id',
+            'variants.*.price' => 'required|numeric|min:0',
+            'variants.*.stock' => 'required|integer|min:0',
+            'variants.*.sku' => 'nullable|string',
+            'color_images' => 'nullable|array',
+            'color_images.*' => 'image|max:2048',
         ]);
-
         $validated['slug'] = Str::slug($validated['name']);
+        $validated['is_active'] = $request->boolean('is_active');
+        $validated['is_featured'] = $request->boolean('is_featured');
+        $validated['is_new'] = $request->boolean('is_new');
+        $validated['is_pre_order'] = $request->boolean('is_pre_order');
 
         // FIX: Wrapped in DB transaction just like store()
         DB::transaction(function () use ($request, $product, &$validated) {
@@ -267,7 +316,46 @@ class AdminProductController extends Controller
                 );
             }
 
-            // 5. Update Stock Combinations safely (Adds new combinations without deleting existing quantities)
+            // 5. Update Product Variants
+            if (! empty($validated['variants'])) {
+                // Delete all existing variants for this product
+                $product->variants()->delete();
+                
+                // Create new variants from the submitted data
+                foreach ($validated['variants'] as $variantData) {
+                    $product->variants()->create([
+                        'color_id' => $variantData['color_id'],
+                        'phone_storage_id' => $variantData['phone_storage_id'],
+                        'price' => $variantData['price'],
+                        'stock' => $variantData['stock'],
+                        'sku' => $variantData['sku'] ?? null,
+                        'is_active' => true,
+                    ]);
+                }
+            }
+
+            // 6. Handle color-specific images
+            if (! empty($validated['color_images'])) {
+                // Delete existing images for colors being updated
+                foreach (array_keys($validated['color_images']) as $colorId) {
+                    $product->variantImages()->where('color_id', $colorId)->delete();
+                }
+                
+                // Create new images
+                foreach ($validated['color_images'] as $colorId => $imageFile) {
+                    if ($imageFile && $imageFile->isValid()) {
+                        $path = $imageFile->store('products', 'public');
+                        $product->variantImages()->create([
+                            'color_id' => $colorId,
+                            'image' => $path,
+                            'is_primary' => true,
+                            'sort_order' => 0,
+                        ]);
+                    }
+                }
+            }
+
+            // 7. Update Stock Combinations safely (Adds new combinations without deleting existing quantities)
             if (empty($colorIds) && empty($storageIds)) {
                 Stock::firstOrCreate(['product_id' => $product->id, 'color_id' => null, 'phone_storage_id' => null], ['quantity' => 0]);
             } else {

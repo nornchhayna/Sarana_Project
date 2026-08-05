@@ -20,10 +20,15 @@ return [
         'endpoint' => env('MAILGUN_ENDPOINT', 'api.mailgun.net'),
         'scheme' => 'https',
     ],
-
-    'postmark' => [
-        'token' => env('POSTMARK_TOKEN'),
-    ],
+    // 'floating_contact_widget' => [
+    //     'phone' => env('FLOATING_CONTACT_WIDGET_PHONE', '+85517935151'),
+    //     'whatsapp' => env('FLOATING_CONTACT_WIDGET_WHATSAPP', '85517935151'),
+    //     'telegram' => env('FLOATING_CONTACT_WIDGET_TELEGRAM', 'yourusername'),
+    //     'messenger' => env('FLOATING_CONTACT_WIDGET_MESSENGER', 'yourpage'),
+    // ],
+    // 'postmark' => [
+    //     'token' => env('POSTMARK_TOKEN'),
+    // ],
 
     'bakong' => [
         'api_token' => env('BAKONG_API_TOKEN'),
