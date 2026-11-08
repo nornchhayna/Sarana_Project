@@ -110,6 +110,12 @@
                                                         <span class="text-amber-400">★★★★★</span>
                                                     </p>
                                                 @endif
+                                                @if($item->product->gifts->isNotEmpty())
+                                                    <p class="text-xs text-gray-500 mt-1">
+                                                        <span class="text-[#f0603f]">🎁 Includes:</span>
+                                                        {{ $item->product->gifts->pluck('name')->implode(', ') }}
+                                                    </p>
+                                                @endif
                                             </div>
                                         </div>
                                     </td>
@@ -202,6 +208,13 @@
                                         @if($item->color?->name && $item->phoneStorage?->capacity) &middot; @endif
                                         @if($item->phoneStorage?->capacity){{ $item->phoneStorage->capacity }}@endif
                                     </p>
+
+                                    @if($item->product->gifts->isNotEmpty())
+                                        <p class="text-xs text-gray-500 mt-1">
+                                            <span class="text-[#f0603f]">🎁 Includes:</span>
+                                            {{ $item->product->gifts->pluck('name')->implode(', ') }}
+                                        </p>
+                                    @endif
 
                                     <div class="flex items-center justify-between mt-3">
                                         <form action="{{ route('cart.update', $item) }}" method="POST" class="qty-form">

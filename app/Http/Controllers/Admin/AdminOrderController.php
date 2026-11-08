@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\Stock;
 use App\Notifications\OrderShippedNotification;
+use App\Services\OrderFulfillmentService;
 use Illuminate\Http\Request;
 
 class AdminOrderController extends Controller
@@ -70,7 +71,42 @@ class AdminOrderController extends Controller
         ]);
 
         $previousStatus = $order->status;
+
+        // Use OrderFulfillmentService for stock movements and payment sync when confirming
+        if (app(OrderFulfillmentService::class)->isPaidStatus($validated['status']) &&
+            ! app(OrderFulfillmentService::class)->isPaidStatus($previousStatus)) {
+            app(OrderFulfillmentService::class)->markAsPaid($order);
+        }
+
+        // For COD orders, deduct stock when status changes to delivered
+        if ($validated['status'] === 'delivered' && $previousStatus !== 'delivered') {
+            $order->load('payment'); // Ensure payment relationship is loaded
+            $payment = $order->payment;
+            
+            \Illuminate\Support\Facades\Log::info('COD stock deduction check', [
+                'order_id' => $order->id,
+                'order_number' => $order->order_number,
+                'payment_exists' => $payment ? true : false,
+                'payment_method' => $payment?->method,
+                'previous_status' => $previousStatus,
+                'new_status' => $validated['status'],
+            ]);
+
+            // Check for both 'cod' and 'cash' payment methods
+            if ($payment && in_array($payment->method, ['cod', 'cash'], true)) {
+                $deducted = app(OrderFulfillmentService::class)->deductStockForCOD($order);
+                \Illuminate\Support\Facades\Log::info('COD stock deduction result', [
+                    'order_id' => $order->id,
+                    'deducted' => $deducted,
+                ]);
+            }
+        }
+
         $order->update(['status' => $validated['status']]);
+
+        if (app(OrderFulfillmentService::class)->isPaidStatus($validated['status'])) {
+            $order->payments()->where('status', 'pending')->update(['status' => 'paid', 'paid_at' => now()]);
+        }
 
         // Send notifications on key transitions
         if ($validated['status'] === 'shipped' && $previousStatus !== 'shipped') {
@@ -86,18 +122,12 @@ class AdminOrderController extends Controller
             return back()->with('error', 'Cannot cancel this order.');
         }
 
-        $order->update(['status' => 'cancelled']);
+        $previousStatus = $order->status;
+        $order->update(['status' => 'cancelled', 'cancelled_at' => now()]);
 
-        // Restore stock
-        foreach ($order->items as $item) {
-            $stock = Stock::where('product_id', $item->product_id)
-                ->where('color_id', $item->color_id)
-                ->where('phone_storage_id', $item->phone_storage_id)
-                ->first();
-
-            if ($stock) {
-                $stock->increment('quantity', $item->quantity);
-            }
+        // Use OrderFulfillmentService for stock restoration and movement recording
+        if (app(OrderFulfillmentService::class)->isPaidStatus($previousStatus)) {
+            app(OrderFulfillmentService::class)->restoreStock($order);
         }
 
         return back()->with('success', 'Order cancelled and stock restored.');

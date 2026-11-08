@@ -246,7 +246,7 @@
 <div id="redirect-url"
      data-poll="{{ route('checkout.payment.status', $order) }}"
      data-cancel="{{ route('checkout.payment.cancel', $order) }}"
-     data-success="{{ route('products.index') }}"
+     data-success="{{ route('orders.show', $order) }}"
      data-csrf="{{ csrf_token() }}"
      style="display:none"></div>
 
@@ -424,9 +424,9 @@ script.onload = function () {
         });
     }
 
-    // ── Polling (every 4 s, max 75 times ≈ 5 min) ──────────────────────────
+    // ── Polling (every 4 s, max 450 times ≈ 30 min, matching QR countdown) ──
     var pollCount   = 0;
-    var maxPolls    = 75;
+    var maxPolls    = 450;
     var pollTimerEl = document.getElementById('poll-timer');
 
     var pollInterval = setInterval(function () {
@@ -450,6 +450,8 @@ script.onload = function () {
         .then(function (data) {
             if (data.paid) {
                 setStatus('paid', data.message);
+            } else if (data.status === 'cancelled') {
+                setStatus('cancelled', data.message);
             }
         })
         .catch(function () {

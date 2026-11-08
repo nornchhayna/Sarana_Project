@@ -24,6 +24,13 @@ class OrderController extends Controller
 
     public function index(Request $request)
     {
+        // Auto-sync any pending orders that have a completed/paid payment
+        Order::where('user_id', auth()->id())
+            ->where('status', 'pending')
+            ->whereHas('payments', fn ($q) => $q->whereIn('status', ['paid', 'completed']))
+            ->get()
+            ->each(fn ($o) => app(OrderFulfillmentService::class)->markAsPaid($o));
+
         $query = Order::where('user_id', auth()->id())
             ->with(['items', 'payment', 'invoice'])
             ->latest();
@@ -46,6 +53,25 @@ class OrderController extends Controller
     public function show(Order $order)
     {
         abort_if($order->user_id !== auth()->id(), 403);
+
+        // Auto-sync if payment was completed but order is still pending
+        if ($order->status === 'pending') {
+            $payment = $order->payments()->latest()->first();
+            if ($payment && in_array($payment->status, ['paid', 'completed'], true)) {
+                app(OrderFulfillmentService::class)->markAsPaid($order, $payment);
+                $order->refresh();
+            } elseif ($payment && $payment->method === 'khqr' && ! empty($payment->khqr_md5)) {
+                try {
+                    if (app(BakongKHQRService::class)->isPaid($payment->khqr_md5)) {
+                        app(OrderFulfillmentService::class)->markAsPaid($order, $payment);
+                        $order->refresh();
+                    }
+                } catch (\Throwable $e) {
+                    // Silently ignore external API errors
+                }
+            }
+        }
+
         $order->load(['items.product.variantImages', 'items.phoneStorage', 'payment', 'invoice']);
 
         $steps = [
@@ -115,7 +141,8 @@ public function showKHQR(Order $order, BakongKHQRService $khqr)
         ->where('method', 'khqr')
         ->where('status', 'pending')
         ->whereNotNull('khqr_md5')
-        ->where(fn ($q) => $q->whereNull('khqr_expires_at')->orWhere('khqr_expires_at', '>', now()))
+        // Allow expired payments to still be checked if they're recent (within 3 days)
+        ->where(fn ($q) => $q->whereNull('khqr_expires_at')->orWhere('khqr_expires_at', '>', now()->subDays(3)))
         ->first();
 
     if (! $payment) {

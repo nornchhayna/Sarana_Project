@@ -3,171 +3,511 @@
 @section('title', isset($category) ? 'Edit Category' : 'Create Category')
 @section('page-title', isset($category) ? 'Edit Category' : 'New Category')
 
-@push('styles')
-<style>
-    .form-layout { display: grid; grid-template-columns: 1fr 360px; gap: 24px; align-items: start; }
-    
-    .admin-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 24px; overflow: hidden; }
-    .admin-card-header { padding: 16px 20px; border-bottom: 1px solid var(--border); font-weight: 700; font-size: 14px; color: var(--text-1); display: flex; align-items: center; gap: 8px; }
-    .admin-card-body { padding: 24px 20px; }
-
-    .form-group { margin-bottom: 20px; }
-    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
-    
-    .form-label { display: block; font-size: 12px; font-weight: 600; color: var(--text-2); margin-bottom: 8px; }
-    .text-danger { color: var(--accent-3); }
-
-    .form-control, .form-select { width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text-1); padding: 10px 14px; border-radius: 8px; font-family: var(--sans); font-size: 14px; transition: border-color 0.2s; outline: none; }
-    .form-control:focus, .form-select:focus { border-color: var(--accent); }
-    .form-control::placeholder { color: var(--text-3); }
-    textarea.form-control { resize: vertical; min-height: 100px; }
-    .font-mono { font-family: var(--mono); font-size: 13px; }
-
-    .switch-wrap { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; }
-    .switch-label { font-size: 13px; font-weight: 500; color: var(--text-1); }
-    .switch { position: relative; display: inline-block; width: 40px; height: 22px; }
-    .switch input { opacity: 0; width: 0; height: 0; }
-    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--border); transition: .3s; border-radius: 22px; }
-    .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: #fff; transition: .3s; border-radius: 50%; }
-    input:checked + .slider { background-color: var(--accent); }
-    input:checked + .slider:before { transform: translateX(18px); }
-
-    .image-preview-wrapper { width: 100%; height: 200px; background: var(--bg); border: 2px dashed var(--border); border-radius: 8px; display: flex; justify-content: center; align-items: center; margin-bottom: 16px; overflow: hidden; }
-    .image-preview-wrapper img { max-width: 100%; max-height: 100%; object-fit: contain; }
-    .image-preview-icon { font-size: 40px; color: var(--border); }
-
-    .btn-group-vertical { display: flex; flex-direction: column; gap: 12px; margin-top: 20px; }
-    .btn { width: 100%; padding: 12px; border-radius: 8px; font-family: var(--sans); font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
-    .btn-primary { background: var(--accent); color: #fff; border: none; }
-    .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(91, 110, 245, 0.2); }
-    .btn-secondary { background: var(--bg); color: var(--text-1); border: 1px solid var(--border); text-decoration: none; }
-    .btn-secondary:hover { border-color: var(--text-3); color: #fff; }
-
-    @media(max-width: 991px){ .form-layout { grid-template-columns: 1fr; } }
-</style>
-@endpush
-
 @section('content')
-<form method="POST"
-      action="{{ isset($category) ? route('admin.categories.update', $category) : route('admin.categories.store') }}"
-      enctype="multipart/form-data">
-    @csrf
-    @if(isset($category)) @method('PUT') @endif
 
-    <div class="form-layout">
-        
-        {{-- ── LEFT COLUMN ── --}}
-        <div class="main-col">
-            
-            <div class="admin-card">
-                <div class="admin-card-header"><i class="fa-solid fa-circle-info" style="color: var(--text-3);"></i> Basic Details</div>
-                <div class="admin-card-body">
-                    
-                    <div class="form-group">
-                        <label class="form-label">Category Name <span class="text-danger">*</span></label>
-                        <input type="text" name="name" value="{{ old('name', $category->name ?? '') }}" class="form-control" placeholder="e.g. Smartphones" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label">Slug</label>
-                        <input type="text" name="slug" value="{{ old('slug', $category->slug ?? '') }}" class="form-control font-mono" placeholder="Auto-generated if blank">
-                    </div>
-                    
-                    <div class="form-group" style="margin-bottom: 0;">
-                        <label class="form-label">Description</label>
-                        <textarea name="description" class="form-control" placeholder="Category description...">{{ old('description', $category->description ?? '') }}</textarea>
-                    </div>
+{{-- Page Header --}}
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
 
-                </div>
+            <div class="col-sm-6">
+                <h1 class="m-0">
+                    {{ isset($category) ? 'Edit Category' : 'Create Category' }}
+                </h1>
             </div>
 
-            <div class="admin-card">
-                <div class="admin-card-header"><i class="fa-solid fa-image" style="color: var(--text-3);"></i> Category Image</div>
-                <div class="admin-card-body" style="margin-bottom: 0;">
-                    <div class="image-preview-wrapper" id="image-preview-container">
-                        @if(isset($category) && $category->image)
-                            <img id="image-preview" src="{{ asset('storage/'.$category->image) }}" alt="Image">
-                        @else
-                            <i id="image-icon" class="fa-regular fa-image image-preview-icon"></i>
-                            <img id="image-preview" src="" alt="Image" style="display: none;">
-                        @endif
-                    </div>
-                    <input type="file" name="image" id="image-input" class="form-control" accept="image/*">
-                </div>
-            </div>
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                    <li class="breadcrumb-item">
+                        <a href="{{ route('admin.dashboard') }}">Dashboard</a>
+                    </li>
 
-        </div>
+                    <li class="breadcrumb-item">
+                        <a href="{{ route('admin.categories.index') }}">
+                            Categories
+                        </a>
+                    </li>
 
-        {{-- ── RIGHT COLUMN ── --}}
-        <div class="side-col">
-            
-            <div class="admin-card">
-                <div class="admin-card-header"><i class="fa-solid fa-rocket" style="color: var(--accent-4);"></i> Publish</div>
-                <div class="admin-card-body">
-                    
-                    <div class="switch-wrap">
-                        <span class="switch-label">Active (Visible)</span>
-                        <label class="switch">
-                            <input type="checkbox" name="is_active" value="1" {{ old('is_active', ($category->is_active ?? true) ? '1' : '') ? 'checked' : '' }}>
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-
-                    <div class="btn-group-vertical">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fa-solid fa-floppy-disk"></i> {{ isset($category) ? 'Update Category' : 'Save Category' }}
-                        </button>
-                        <a href="{{ route('admin.categories.index') }}" class="btn btn-secondary">Cancel</a>
-                    </div>
-                </div>
-            </div>
-
-            <div class="admin-card">
-                <div class="admin-card-header"><i class="fa-solid fa-folder-tree" style="color: var(--text-3);"></i> Hierarchy</div>
-                <div class="admin-card-body">
-                    
-                    <div class="form-group">
-                        <label class="form-label">Parent Category</label>
-                        <select name="parent_id" class="form-select">
-                            <option value="">None (Top Level)</option>
-                            @foreach($parentCategories ?? [] as $parent)
-                                {{-- Prevent selecting itself as a parent --}}
-                                @if(!isset($category) || $category->id !== $parent->id)
-                                    <option value="{{ $parent->id }}" @selected(old('parent_id', $category->parent_id ?? '') == $parent->id)>{{ $parent->name }}</option>
-                                @endif
-                            @endforeach
-                        </select>
-                    </div>
-                    
-                    <div class="form-group" style="margin-bottom: 0;">
-                        <label class="form-label">Sort Order</label>
-                        <input type="number" name="sort_order" value="{{ old('sort_order', $category->sort_order ?? 0) }}" class="form-control font-mono" placeholder="0">
-                    </div>
-
-                </div>
+                    <li class="breadcrumb-item active">
+                        {{ isset($category) ? 'Edit' : 'Create' }}
+                    </li>
+                </ol>
             </div>
 
         </div>
     </div>
-</form>
+</div>
+
+
+{{-- Main Content --}}
+<section class="content">
+
+    <div class="container-fluid">
+
+        <form
+            method="POST"
+            action="{{ isset($category)
+                ? route('admin.categories.update', $category)
+                : route('admin.categories.store') }}"
+            enctype="multipart/form-data"
+        >
+
+            @csrf
+
+            @if(isset($category))
+                @method('PUT')
+            @endif
+
+
+            <div class="row">
+
+                {{-- ========================================= --}}
+                {{-- LEFT COLUMN --}}
+                {{-- ========================================= --}}
+                <div class="col-lg-8">
+
+                    {{-- Basic Details --}}
+                    <div class="card">
+
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                Basic Details
+                            </h3>
+                        </div>
+
+                        <div class="card-body">
+
+                            {{-- Category Name --}}
+                            <div class="form-group">
+
+                                <label for="name">
+                                    Category Name
+                                    <span class="text-danger">*</span>
+                                </label>
+
+                                <input
+                                    type="text"
+                                    name="name"
+                                    id="name"
+                                    value="{{ old('name', $category->name ?? '') }}"
+                                    class="form-control @error('name') is-invalid @enderror"
+                                    placeholder="e.g. Smartphones"
+                                    required
+                                >
+
+                                @error('name')
+                                    <span class="invalid-feedback">
+                                        {{ $message }}
+                                    </span>
+                                @enderror
+
+                            </div>
+
+
+                            {{-- Slug --}}
+                            <div class="form-group">
+
+                                <label for="slug">
+                                    Slug
+                                </label>
+
+                                <input
+                                    type="text"
+                                    name="slug"
+                                    id="slug"
+                                    value="{{ old('slug', $category->slug ?? '') }}"
+                                    class="form-control @error('slug') is-invalid @enderror"
+                                    placeholder="Auto-generated if blank"
+                                >
+
+                                @error('slug')
+                                    <span class="invalid-feedback">
+                                        {{ $message }}
+                                    </span>
+                                @enderror
+
+                                <small class="form-text text-muted">
+                                    Example: smartphones
+                                </small>
+
+                            </div>
+
+
+                            {{-- Description --}}
+                            <div class="form-group mb-0">
+
+                                <label for="description">
+                                    Description
+                                </label>
+
+                                <textarea
+                                    name="description"
+                                    id="description"
+                                    rows="5"
+                                    class="form-control @error('description') is-invalid @enderror"
+                                    placeholder="Category description..."
+                                >{{ old('description', $category->description ?? '') }}</textarea>
+
+                                @error('description')
+                                    <span class="invalid-feedback">
+                                        {{ $message }}
+                                    </span>
+                                @enderror
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    {{-- Category Image --}}
+                    <div class="card">
+
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-image mr-1"></i>
+                                Category Image
+                            </h3>
+                        </div>
+
+                        <div class="card-body">
+
+                            {{-- Image Preview --}}
+                            <div
+                                id="image-preview-container"
+                                class="border rounded bg-light d-flex align-items-center justify-content-center mb-3"
+                                style="
+                                    width: 100%;
+                                    height: 220px;
+                                    overflow: hidden;
+                                "
+                            >
+
+                                @if(isset($category) && $category->image)
+
+                                    <img
+                                        id="image-preview"
+                                        src="{{ asset('storage/' . $category->image) }}"
+                                        alt="{{ $category->name }}"
+                                        style="
+                                            max-width: 100%;
+                                            max-height: 100%;
+                                            object-fit: contain;
+                                        "
+                                    >
+
+                                    <i
+                                        id="image-icon"
+                                        class="fas fa-image fa-3x text-muted"
+                                        style="display: none;"
+                                    ></i>
+
+                                @else
+
+                                    <i
+                                        id="image-icon"
+                                        class="far fa-image fa-3x text-muted"
+                                    ></i>
+
+                                    <img
+                                        id="image-preview"
+                                        src=""
+                                        alt="Image preview"
+                                        style="
+                                            display: none;
+                                            max-width: 100%;
+                                            max-height: 100%;
+                                            object-fit: contain;
+                                        "
+                                    >
+
+                                @endif
+
+                            </div>
+
+
+                            {{-- Image Upload --}}
+                            <div class="form-group mb-0">
+
+                                <label for="image">
+                                    Upload Image
+                                </label>
+
+                                <div class="custom-file">
+
+                                    <input
+                                        type="file"
+                                        name="image"
+                                        id="image-input"
+                                        accept="image/*"
+                                        class="custom-file-input @error('image') is-invalid @enderror"
+                                    >
+
+                                    <label
+                                        class="custom-file-label"
+                                        for="image-input"
+                                    >
+                                        Choose image
+                                    </label>
+
+                                </div>
+
+                                @error('image')
+                                    <span class="text-danger small">
+                                        {{ $message }}
+                                    </span>
+                                @enderror
+
+                                <small class="form-text text-muted">
+                                    Recommended formats: JPG, JPEG, PNG, WEBP.
+                                </small>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                {{-- ========================================= --}}
+                {{-- RIGHT COLUMN --}}
+                {{-- ========================================= --}}
+                <div class="col-lg-4">
+
+                    {{-- Publish --}}
+                    <div class="card">
+
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-rocket mr-1"></i>
+                                Publish
+                            </h3>
+                        </div>
+
+                        <div class="card-body">
+
+                            {{-- Active --}}
+                            <div class="form-group">
+
+                                <div class="custom-control custom-switch">
+
+                                    <input
+                                        type="checkbox"
+                                        name="is_active"
+                                        value="1"
+                                        id="is_active"
+                                        class="custom-control-input"
+                                        {{ old(
+                                            'is_active',
+                                            isset($category)
+                                                ? $category->is_active
+                                                : true
+                                        ) ? 'checked' : '' }}
+                                    >
+
+                                    <label
+                                        class="custom-control-label"
+                                        for="is_active"
+                                    >
+                                        Active
+                                    </label>
+
+                                </div>
+
+                                <small class="form-text text-muted">
+                                    Active categories are visible on the website.
+                                </small>
+
+                            </div>
+
+                        </div>
+
+                        <div class="card-footer">
+
+                            <button
+                                type="submit"
+                                class="btn btn-primary btn-block"
+                            >
+                                <i class="fas fa-save mr-1"></i>
+
+                                {{ isset($category)
+                                    ? 'Update Category'
+                                    : 'Save Category'
+                                }}
+                            </button>
+
+                            <a
+                                href="{{ route('admin.categories.index') }}"
+                                class="btn btn-secondary btn-block"
+                            >
+                                <i class="fas fa-times mr-1"></i>
+                                Cancel
+                            </a>
+
+                        </div>
+
+                    </div>
+
+
+                    {{-- Hierarchy --}}
+                    <div class="card">
+
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-folder-tree mr-1"></i>
+                                Hierarchy
+                            </h3>
+                        </div>
+
+                        <div class="card-body">
+
+                            {{-- Parent Category --}}
+                            <div class="form-group">
+
+                                <label for="parent_id">
+                                    Parent Category
+                                </label>
+
+                                <select
+                                    name="parent_id"
+                                    id="parent_id"
+                                    class="form-control @error('parent_id') is-invalid @enderror"
+                                >
+
+                                    <option value="">
+                                        None (Top Level)
+                                    </option>
+
+                                    @foreach($parentCategories ?? [] as $parent)
+
+                                        @if(!isset($category) || $category->id !== $parent->id)
+
+                                            <option
+                                                value="{{ $parent->id }}"
+                                                @selected(
+                                                    old(
+                                                        'parent_id',
+                                                        $category->parent_id ?? ''
+                                                    ) == $parent->id
+                                                )
+                                            >
+                                                {{ $parent->name }}
+                                            </option>
+
+                                        @endif
+
+                                    @endforeach
+
+                                </select>
+
+                                @error('parent_id')
+                                    <span class="invalid-feedback">
+                                        {{ $message }}
+                                    </span>
+                                @enderror
+
+                            </div>
+
+
+                            {{-- Sort Order --}}
+                            <div class="form-group mb-0">
+
+                                <label for="sort_order">
+                                    Sort Order
+                                </label>
+
+                                <input
+                                    type="number"
+                                    name="sort_order"
+                                    id="sort_order"
+                                    value="{{ old('sort_order', $category->sort_order ?? 0) }}"
+                                    class="form-control @error('sort_order') is-invalid @enderror"
+                                    placeholder="0"
+                                    min="0"
+                                >
+
+                                @error('sort_order')
+                                    <span class="invalid-feedback">
+                                        {{ $message }}
+                                    </span>
+                                @enderror
+
+                                <small class="form-text text-muted">
+                                    Lower numbers appear first.
+                                </small>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</section>
+
 @endsection
 
+
 @push('scripts')
+
 <script>
-    document.getElementById('image-input').addEventListener('change', function(event) {
-        const file = event.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const previewImg = document.getElementById('image-preview');
-                const icon = document.getElementById('image-icon');
-                
-                previewImg.src = e.target.result;
-                previewImg.style.display = 'block';
-                if(icon) icon.style.display = 'none';
-            }
-            reader.readAsDataURL(file);
+    document.addEventListener('DOMContentLoaded', function () {
+
+        const imageInput = document.getElementById('image-input');
+        const imagePreview = document.getElementById('image-preview');
+        const imageIcon = document.getElementById('image-icon');
+
+        if (imageInput) {
+
+            imageInput.addEventListener('change', function (event) {
+
+                const file = event.target.files[0];
+
+                // Update filename
+                const label = imageInput.nextElementSibling;
+
+                if (file && label) {
+                    label.textContent = file.name;
+                }
+
+                if (!file) {
+                    return;
+                }
+
+                // Preview image
+                const reader = new FileReader();
+
+                reader.onload = function (e) {
+
+                    if (imagePreview) {
+                        imagePreview.src = e.target.result;
+                        imagePreview.style.display = 'block';
+                    }
+
+                    if (imageIcon) {
+                        imageIcon.style.display = 'none';
+                    }
+
+                };
+
+                reader.readAsDataURL(file);
+
+            });
+
         }
+
     });
 </script>
+
 @endpush

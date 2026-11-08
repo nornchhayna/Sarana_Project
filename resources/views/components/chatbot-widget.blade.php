@@ -164,8 +164,8 @@
     .cbw-footer button:hover { color: #2563eb; }
 
     @media (max-width: 480px) {
-        .cbw-launcher { right: 12px; bottom: 16px; width: 50px; height: 50px; }
-        .cbw-panel { right: 12px; bottom: 76px; width: calc(100vw - 24px); }
+        .cbw-launcher { right: 12px; bottom: 75px; width: 50px; height: 50px; }
+        .cbw-panel { right: 12px; bottom: 130px; width: calc(100vw - 24px); }
     }
 </style>
 

@@ -1,148 +1,413 @@
 @extends('layouts.admin')
+
 @section('title', 'Promotions & Coupons')
 @section('page-title', 'Manage Discounts')
 
 @section('content')
 
-{{-- ── PROMOTION SYSTEM COMPONENT STYLES ── --}}
-<style>
-    .page-toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; gap: 16px; flex-wrap: wrap; }
-    
-    .btn-primary { background: var(--accent, #5B6EF5); color: #fff; padding: 9px 16px; border-radius: 8px; text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; font-size: 13px; transition: all 0.2s; border: none; cursor: pointer; }
-    .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(91, 110, 245, 0.2); }
-    .btn-secondary { background: var(--card, #1A1E2B); color: var(--text-1, #E8EAF2); border: 1px solid var(--border, #252A3A); padding: 9px 16px; border-radius: 8px; font-weight: 600; font-size: 13px; cursor: pointer; transition: all 0.2s; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
-    .btn-secondary:hover { border-color: var(--accent, #5B6EF5); color: var(--accent, #5B6EF5); }
-    
-    .filters { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
-    .form-input, .form-select { background: var(--bg, #0C0E14); border: 1px solid var(--border, #252A3A); color: var(--text-1, #E8EAF2); padding: 9px 12px; border-radius: 8px; font-size: 13px; font-family: var(--sans, sans-serif); outline: none; transition: border-color 0.2s; }
-    .form-input:focus, .form-select:focus { border-color: var(--accent, #5B6EF5); }
-    .form-select option { background: var(--card, #1A1E2B); color: var(--text-1, #E8EAF2); }
-    
-    .promo-code-badge { font-family: var(--mono, monospace); font-size: 12px; font-weight: 700; color: var(--accent-2, #00D4AA); background: rgba(0, 212, 170, 0.08); padding: 4px 10px; border-radius: 6px; display: inline-block; border: 1px solid rgba(0, 212, 170, 0.2); letter-spacing: 0.5px; }
-    .promo-mono-text { font-family: var(--mono, monospace); font-size: 12px; color: var(--text-3, #555B72); }
+<div class="container-fluid">
 
-    .action-group { display: flex; gap: 6px; justify-content: flex-end; }
-    .btn-action { width: 32px; height: 32px; border-radius: 6px; border: 1px solid var(--border, #252A3A); background: var(--card, #1A1E2B); color: var(--text-2, #8B90A7); display: grid; place-items: center; cursor: pointer; transition: all 0.2s; text-decoration: none; font-size: 13px; }
-    .btn-action:hover { border-color: var(--accent, #5B6EF5); color: var(--text-1, #E8EAF2); background: rgba(91, 110, 245, 0.1); }
-    .btn-action.delete:hover { border-color: var(--accent-3, #FF5C7A); color: var(--accent-3, #FF5C7A); background: rgba(255, 92, 122, 0.1); }
-    
-    .table-wrap { overflow-x: auto; background: var(--card, #1A1E2B); border-radius: 12px; border: 1px solid var(--border, #252A3A); }
-    table { width: 100%; border-collapse: collapse; }
-    thead th { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--text-3, #555B72); padding: 14px 22px; text-align: left; border-bottom: 1px solid var(--border, #252A3A); }
-    tbody tr { border-bottom: 1px solid rgba(37, 42, 58, 0.5); }
-    tbody tr:hover { background: rgba(255, 255, 255, 0.02); }
-    tbody td { padding: 14px 22px; font-size: 13px; color: var(--text-2, #8B90A7); vertical-align: middle; }
-    
-    .status-badge { font-size: 10px; font-weight: 600; padding: 4px 10px; border-radius: 20px; font-family: monospace; display: inline-block; }
-    .status-paid { background: rgba(0, 212, 170, 0.12); color: #00D4AA; }
-    .status-pending { background: rgba(245, 166, 35, 0.12); color: #F5A623; }
-    .card-footer { padding: 16px 22px; border-top: 1px solid var(--border, #252A3A); }
-</style>
+    {{-- Header / Filter --}}
+    <div class="card card-outline card-primary">
 
-<div class="page-toolbar">
-    <div>
-        <a href="{{ route('admin.promotions.create') }}" class="btn-primary">
-            <i class="fa-solid fa-plus"></i> Add Promotion
-        </a>
+        <div class="card-header">
+            <div class="row align-items-center">
+
+                {{-- Add Promotion --}}
+                <div class="col-md-4">
+                    <a href="{{ route('admin.promotions.create') }}"
+                       class="btn btn-primary">
+                        <i class="fas fa-plus"></i>
+                        Add Promotion
+                    </a>
+                </div>
+
+                {{-- Filters --}}
+                <div class="col-md-8">
+                    <form method="GET">
+                        <div class="row justify-content-end">
+
+                            {{-- Search --}}
+                            <div class="col-md-4 mb-2">
+                                <input
+                                    type="text"
+                                    name="search"
+                                    value="{{ request('search') }}"
+                                    class="form-control"
+                                    placeholder="Search campaign name, code..."
+                                >
+                            </div>
+
+                            {{-- Type --}}
+                            <div class="col-md-3 mb-2">
+                                <select name="type" class="form-control">
+                                    <option value="">All Value Types</option>
+
+                                    <option value="percentage"
+                                        @selected(request('type') === 'percentage')>
+                                        Percentage (%)
+                                    </option>
+
+                                    <option value="fixed"
+                                        @selected(request('type') === 'fixed')>
+                                        Fixed Cash ($)
+                                    </option>
+                                </select>
+                            </div>
+
+                            {{-- Status --}}
+                            <div class="col-md-3 mb-2">
+                                <select name="status" class="form-control">
+                                    <option value="">All Statuses</option>
+
+                                    <option value="active"
+                                        @selected(request('status') === 'active')>
+                                        Active
+                                    </option>
+
+                                    <option value="inactive"
+                                        @selected(request('status') === 'inactive')>
+                                        Inactive
+                                    </option>
+                                </select>
+                            </div>
+
+                            {{-- Filter --}}
+                            <div class="col-md-2 mb-2">
+                                <button type="submit"
+                                        class="btn btn-secondary btn-block">
+                                    <i class="fas fa-filter"></i>
+                                    Filter
+                                </button>
+                            </div>
+
+                        </div>
+                    </form>
+                </div>
+
+            </div>
+        </div>
+
     </div>
-    
-    <form class="filters" method="GET">
-        <input type="text" name="search" value="{{ request('search') }}" class="form-input" placeholder="Search campaign name, code…" style="width: 240px;">
-        
-        <select name="type" class="form-select" style="width: 150px;">
-            <option value="">All Value Types</option>
-            <option value="percentage" @selected(request('type') === 'percentage')>Percentage (%)</option>
-            <option value="fixed" @selected(request('type') === 'fixed')>Fixed Cash ($)</option>
-        </select>
 
-        <select name="status" class="form-select" style="width: 140px;">
-            <option value="">All Statuses</option>
-            <option value="active" @selected(request('status') === 'active')>Active</option>
-            <option value="inactive" @selected(request('status') === 'inactive')>Inactive</option>
-        </select>
-        
-        <button class="btn-secondary">Filter</button>
-    </form>
-</div>
 
-<div class="table-wrap">
-    <table>
-        <thead>
-            <tr>
-                <th style="padding-left: 22px;">Promotion / Campaign Name</th>
-                <th>Coupon Code</th>
-                <th>Discount Value</th>
-                <th>Usage Metrics</th>
-                <th>Validity Window</th>
-                <th>Status</th>
-                <th style="text-align: right; padding-right: 22px;">Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            @forelse($promotions as $promo)
-            <tr>
-                <td style="padding-left: 22px;">
-                    <div style="color: var(--text-1, #E8EAF2); font-weight: 600;">{{ $promo->name }}</div>
-                    @if($promo->description)
-                        <div style="font-size: 11px; color: var(--text-3); margin-top: 2px;">{{ Str::limit($promo->description, 45) }}</div>
-                    @endif
-                </td>
-                <td>
-                    @if($promo->code)
-                        <span class="promo-code-badge">{{ $promo->code }}</span>
-                    @else
-                        <span style="color: var(--text-3); font-style: italic; font-size: 12px;">Automatic / Automatic</span>
-                    @endif
-                </td>
-                <td style="font-family: var(--mono); font-weight: 700; color: var(--text-1);">
-                    @if($promo->type === 'percentage')
-                        {{ number_format($promo->value) }}% Off
-                    @else
-                        ${{ number_format($promo->value, 2) }} Off
-                    @endif
-                </td>
-                <td>
-                    <div style="font-size: 13px; color: var(--text-1);">
-                        <strong>{{ $promo->usage_count ?? 0 }}</strong>
-                        <span style="color:var(--text-3);"> / {{ $promo->usage_limit ?: '∞' }} uses</span>
-                    </div>
-                </td>
-                <td class="promo-mono-text" style="font-size: 11px;">
-                    <div>Start: {{ $promo->starts_at ? \Carbon\Carbon::parse($promo->starts_at)->format('Y-m-d') : 'Immediate' }}</div>
-                    <div style="margin-top: 2px;">End: {{ $promo->expires_at ? \Carbon\Carbon::parse($promo->expires_at)->format('Y-m-d') : 'No Expiry' }}</div>
-                </td>
-                <td>
-                    <span class="status-badge {{ $promo->is_active ? 'status-paid' : 'status-pending' }}">
-                        {{ $promo->is_active ? 'Active' : 'Inactive' }}
-                    </span>
-                </td>
-                <td style="padding-right: 22px;">
-                    <div class="action-group">
-                        <a href="{{ route('admin.promotions.edit', $promo) }}" class="btn-action" title="Edit Properties">
-                            <i class="fa-solid fa-pen"></i>
-                        </a>
-                        <form method="POST" action="{{ route('admin.promotions.destroy', $promo) }}" onsubmit="return confirm('Permanently discard this voucher promotion strategy?')" style="margin: 0;">
-                            @csrf @method('DELETE')
-                            <button class="btn-action delete" title="Delete">
-                                <i class="fa-solid fa-trash"></i>
-                            </button>
-                        </form>
-                    </div>
-                </td>
-            </tr>
-            @empty
-            <tr>
-                <td colspan="7" style="text-align: center; padding: 40px; color: var(--text-3, #555B72);">No promotion metrics initialized yet.</td>
-            </tr>
-            @endforelse
-        </tbody>
-    </table>
-    
-    @if($promotions->hasPages())
-    <div class="card-footer">
-        {{ $promotions->links() }}
+    {{-- Promotions Table --}}
+    <div class="card card-outline card-primary">
+
+        <div class="card-header">
+            <h3 class="card-title">
+                <i class="fas fa-tags mr-1"></i>
+                Promotions & Coupons
+            </h3>
+
+            <div class="card-tools">
+                <span class="badge badge-info">
+                    {{ $promotions->total() }} Promotions
+                </span>
+            </div>
+        </div>
+
+        <div class="card-body p-0">
+
+            <div class="table-responsive">
+
+                <table class="table table-hover table-striped mb-0">
+
+                    <thead class="thead-light">
+                        <tr>
+
+                            <th style="width: 20%;">
+                                Promotion / Campaign
+                            </th>
+
+                            <th>
+                                Coupon Code
+                            </th>
+
+                            <th>
+                                Discount Value
+                            </th>
+
+                            <th>
+                                Usage
+                            </th>
+
+                            <th>
+                                Validity
+                            </th>
+
+                            <th>
+                                Status
+                            </th>
+
+                            <th class="text-right" style="width: 120px;">
+                                Actions
+                            </th>
+
+                        </tr>
+                    </thead>
+
+                    <tbody>
+
+                        @forelse($promotions as $promo)
+
+                            <tr>
+
+                                {{-- Campaign Name --}}
+                                <td>
+
+                                    <strong>
+                                        {{ $promo->name }}
+                                    </strong>
+
+                                    @if($promo->description)
+
+                                        <div class="text-muted small mt-1">
+                                            {{ Str::limit($promo->description, 60) }}
+                                        </div>
+
+                                    @endif
+
+                                </td>
+
+
+                                {{-- Coupon Code --}}
+                                <td>
+
+                                    @if($promo->code)
+
+                                        <span class="badge badge-dark">
+                                            <i class="fas fa-ticket-alt mr-1"></i>
+                                            {{ $promo->code }}
+                                        </span>
+
+                                    @else
+
+                                        <span class="text-muted">
+                                            <i class="fas fa-magic mr-1"></i>
+                                            Automatic
+                                        </span>
+
+                                    @endif
+
+                                </td>
+
+
+                                {{-- Discount --}}
+                                <td>
+
+                                    @if($promo->type === 'percentage')
+
+                                        <span class="badge badge-primary">
+                                            {{ number_format($promo->value) }}%
+                                        </span>
+
+                                        <span class="text-muted">
+                                            Off
+                                        </span>
+
+                                    @else
+
+                                        <strong class="text-success">
+                                            ${{ number_format($promo->value, 2) }}
+                                        </strong>
+
+                                        <span class="text-muted">
+                                            Off
+                                        </span>
+
+                                    @endif
+
+                                </td>
+
+
+                                {{-- Usage --}}
+                                <td>
+
+                                    <strong>
+                                        {{ $promo->usage_count ?? 0 }}
+                                    </strong>
+
+                                    <span class="text-muted">
+                                        /
+                                        {{ $promo->usage_limit ?: '∞' }}
+                                    </span>
+
+                                    @if($promo->usage_limit)
+
+                                        <div class="progress mt-1"
+                                             style="height: 5px; width: 100px;">
+
+                                            @php
+                                                $percentage = $promo->usage_limit > 0
+                                                    ? min(
+                                                        100,
+                                                        (($promo->usage_count ?? 0) / $promo->usage_limit) * 100
+                                                    )
+                                                    : 0;
+                                            @endphp
+
+                                            <div class="progress-bar"
+                                                 role="progressbar"
+                                                 style="width: {{ $percentage }}%">
+                                            </div>
+
+                                        </div>
+
+                                    @endif
+
+                                </td>
+
+
+                                {{-- Validity --}}
+                                <td>
+
+                                    <div class="small">
+
+                                        <div>
+                                            <strong>Start:</strong>
+
+                                            {{ $promo->starts_at
+                                                ? \Carbon\Carbon::parse($promo->starts_at)->format('Y-m-d')
+                                                : 'Immediate'
+                                            }}
+                                        </div>
+
+                                        <div class="text-muted mt-1">
+                                            <strong>End:</strong>
+
+                                            {{ $promo->expires_at
+                                                ? \Carbon\Carbon::parse($promo->expires_at)->format('Y-m-d')
+                                                : 'No Expiry'
+                                            }}
+                                        </div>
+
+                                    </div>
+
+                                </td>
+
+
+                                {{-- Status --}}
+                                <td>
+
+                                    @if($promo->is_active)
+
+                                        <span class="badge badge-success">
+                                            <i class="fas fa-check-circle mr-1"></i>
+                                            Active
+                                        </span>
+
+                                    @else
+
+                                        <span class="badge badge-secondary">
+                                            <i class="fas fa-pause-circle mr-1"></i>
+                                            Inactive
+                                        </span>
+
+                                    @endif
+
+                                </td>
+
+
+                                {{-- Actions --}}
+                                <td class="text-right">
+
+                                    <div class="btn-group">
+
+                                        {{-- Edit --}}
+                                        <a href="{{ route('admin.promotions.edit', $promo) }}"
+                                           class="btn btn-sm btn-info"
+                                           title="Edit Promotion">
+
+                                            <i class="fas fa-edit"></i>
+
+                                        </a>
+
+
+                                        {{-- Delete --}}
+                                        <form
+                                            method="POST"
+                                            action="{{ route('admin.promotions.destroy', $promo) }}"
+                                            style="display:inline;"
+                                            onsubmit="return confirm('Permanently discard this voucher promotion strategy?')"
+                                        >
+
+                                            @csrf
+                                            @method('DELETE')
+
+                                            <button
+                                                type="submit"
+                                                class="btn btn-sm btn-danger"
+                                                title="Delete Promotion"
+                                            >
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+
+                                        </form>
+
+                                    </div>
+
+                                </td>
+
+                            </tr>
+
+                        @empty
+
+                            <tr>
+
+                                <td colspan="7"
+                                    class="text-center py-5">
+
+                                    <div class="text-muted">
+
+                                        <i class="fas fa-tags fa-3x mb-3"></i>
+
+                                        <h5>
+                                            No Promotions Found
+                                        </h5>
+
+                                        <p>
+                                            No promotion metrics initialized yet.
+                                        </p>
+
+                                        <a href="{{ route('admin.promotions.create') }}"
+                                           class="btn btn-primary">
+
+                                            <i class="fas fa-plus"></i>
+                                            Create Promotion
+
+                                        </a>
+
+                                    </div>
+
+                                </td>
+
+                            </tr>
+
+                        @endforelse
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+
+        {{-- Pagination --}}
+        @if($promotions->hasPages())
+
+            <div class="card-footer clearfix">
+
+                {{ $promotions->links() }}
+
+            </div>
+
+        @endif
+
     </div>
-    @endif
+
 </div>
 
 @endsection

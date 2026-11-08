@@ -1,140 +1,337 @@
 @extends('layouts.admin')
+
 @section('title', 'Adjust Stock SKU')
 @section('page-title', 'Adjust Stock Item')
 
 @section('content')
 
-{{-- ── ADJUSTMENT ENGINE COMPONENT STYLES ── --}}
-<style>
-    .form-layout { display: grid; grid-template-columns: 1fr 380px; gap: 24px; align-items: start; }
-    
-    .admin-card { background: var(--card, #1A1E2B); border: 1px solid var(--border, #252A3A); border-radius: 12px; margin-bottom: 24px; overflow: hidden; }
-    .admin-card-header { padding: 16px 20px; border-bottom: 1px solid var(--border, #252A3A); font-weight: 700; font-size: 14px; color: var(--text-1, #E8EAF2); display: flex; align-items: center; gap: 8px; }
-    .admin-card-body { padding: 24px 20px; }
+@php
+    $isVariant = $isVariant ?? ($stock instanceof \App\Models\ProductVariant);
+    $currentQty = $isVariant ? $stock->stock : ($stock->quantity ?? 0);
+    $threshold = $stock->low_stock_threshold ?? 5;
+    $stockType = $isVariant ? 'variant' : 'product';
+    $productObj = $product ?? $stock->product;
+@endphp
 
-    .form-group { margin-bottom: 20px; }
-    .form-label { display: block; font-size: 12px; font-weight: 600; color: var(--text-2, #8B90A7); margin-bottom: 8px; }
-    
-    .form-control, .form-select { width: 100%; background: var(--bg, #0C0E14); border: 1px solid var(--border, #252A3A); color: var(--text-1, #E8EAF2); padding: 10px 14px; border-radius: 8px; font-family: var(--sans, sans-serif); font-size: 14px; transition: border-color 0.2s; outline: none; }
-    .form-control:focus, .form-select:focus { border-color: var(--accent, #5B6EF5); }
-    .form-select option { background: var(--card, #1A1E2B); color: var(--text-1, #E8EAF2); }
-    textarea.form-control { resize: vertical; min-height: 100px; }
+<div class="row">
 
-    .meta-display-box { padding: 14px; background: var(--bg, #0C0E14); border: 1px solid var(--border, #252A3A); border-radius: 8px; margin-bottom: 14px; }
-    .meta-row { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 8px; }
-    .meta-row:last-child { margin-bottom: 0; }
-    .meta-label { color: var(--text-3, #555B72); font-weight: 500; }
-    .meta-val { color: var(--text-1, #E8EAF2); font-weight: 600; font-family: var(--mono, monospace); }
+    {{-- =====================================================
+         LEFT PANEL
+    ====================================================== --}}
+    <div class="col-md-8">
 
-    .btn { width: 100%; padding: 12px; border-radius: 8px; font-family: var(--sans, sans-serif); font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; border: none; }
-    .btn-primary { background: var(--accent, #5B6EF5); color: #fff; }
-    .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
-    .btn-secondary { background: var(--bg, #0C0E14); color: var(--text-1, #E8EAF2); border: 1px solid var(--border, #252A3A); text-decoration: none; }
-    .btn-secondary:hover { border-color: var(--text-3, #555B72); color: #fff; }
+        <form method="POST"
+              action="{{ route('admin.stock.update', ['stock' => $stock->id, 'type' => $stockType]) }}">
 
-    /* Quick adjustment tool input layout grouping */
-    .adjustment-tool-group { display: grid; grid-template-columns: 110px 1fr; gap: 10px; margin-bottom: 14px; }
+            @csrf
+            @method('PUT')
+            <input type="hidden" name="stock_type" value="{{ $stockType }}">
 
-    @media(max-width: 991px){ .form-layout { grid-template-columns: 1fr; } }
-</style>
+            <div class="card card-primary">
 
-<div class="form-layout">
-    
-    {{-- ── LEFT PANEL: CONFIG QUANTITY LIMITS & WARNING THRESHOLDS ── --}}
-    <div class="main-col">
-        <form method="POST" action="{{ route('admin.stock.update', $stock) }}">
-            @csrf @method('PUT')
-            
-            <div class="admin-card">
-                <div class="admin-card-header">
-                    <i class="fa-solid fa-sliders" style="color: var(--text-3);"></i> Base Settings Parameters
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-sliders-h mr-2"></i>
+                        Base Settings Parameters
+                    </h3>
                 </div>
-                <div class="admin-card-body">
-                    
-                    <div style="font-size: 16px; font-weight: 700; color: var(--text-1); margin-bottom: 4px;">
-                        {{ $stock->product->name ?? 'Product Asset' }}
-                    </div>
-                    
-                    <div style="margin-bottom: 20px;">
-                        <span style="font-size: 12px; color: var(--text-3); font-family: var(--mono);">SKU: {{ $stock->product->sku ?? '—' }}</span>
-                        @if($stock->color || $stock->phoneStorage)
-                            <span style="font-size:12px; color: var(--accent-2); margin-left: 10px; font-family: var(--mono);">
-                                [Variant: {{ $stock->color->name ?? '' }} {{ $stock->phoneStorage->capacity ?? '' }}]
+
+                <div class="card-body">
+
+                    {{-- Product --}}
+                    <div class="mb-3">
+
+                        <h5 class="font-weight-bold mb-1">
+                            {{ $productObj->name ?? 'Product Asset' }}
+                        </h5>
+
+                        <div>
+
+                            <span class="text-muted small">
+                                SKU:
+                                {{ $isVariant ? ($stock->sku ?? $productObj->sku ?? '—') : ($productObj->sku ?? '—') }}
                             </span>
-                        @endif
+
+                            @if($isVariant && ($stock->color || $stock->phoneStorage))
+
+                                <span class="text-primary small ml-2">
+
+                                    [Variant:
+                                    {{ $stock->color->name ?? '' }}
+                                    {{ $stock->phoneStorage->capacity ?? '' }}]
+
+                                </span>
+                            @elseif(!$isVariant)
+                                <span class="badge badge-secondary ml-2">
+                                    Single Product / Standard Item
+                                </span>
+                            @endif
+
+                        </div>
+
                     </div>
 
+
+                    {{-- Current Quantity --}}
                     <div class="form-group">
-                        <label class="form-label">Total Current Quantity On-Hand</label>
-                        <input type="number" name="quantity" value="{{ old('quantity', $stock->quantity) }}" class="form-control" style="font-family: var(--mono); font-weight: 700;" min="0" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label">Low Stock Safety Trigger Warning Threshold</label>
-                        <input type="number" name="low_stock_threshold" value="{{ old('low_stock_threshold', $stock->low_stock_threshold) }}" class="form-control" style="font-family: var(--mono);" min="0" required>
+
+                        <label for="quantity">
+                            Total Current Quantity On-Hand
+                        </label>
+
+                        <input
+                            type="number"
+                            name="quantity"
+                            id="quantity"
+                            value="{{ old('quantity', $currentQty) }}"
+                            class="form-control @error('quantity') is-invalid @enderror"
+                            min="0"
+                            required
+                        >
+
+                        @error('quantity')
+                            <div class="invalid-feedback">
+                                {{ $message }}
+                            </div>
+                        @enderror
+
                     </div>
 
-                    <div class="form-group" style="margin-bottom: 0;">
-                        <label class="form-label">Audit Adjustment Log Tracking Note</label>
-                        <textarea name="adjustment_note" class="form-control" placeholder="Describe context for manual changes (e.g., Physical cycle count correction, inbound damages item processing...)"></textarea>
+
+                    {{-- Low Stock Threshold --}}
+                    <div class="form-group">
+
+                        <label for="low_stock_threshold">
+                            Low Stock Safety Trigger Warning Threshold
+                        </label>
+
+                        <input
+                            type="number"
+                            name="low_stock_threshold"
+                            id="low_stock_threshold"
+                            value="{{ old('low_stock_threshold', $threshold) }}"
+                            class="form-control @error('low_stock_threshold') is-invalid @enderror"
+                            min="0"
+                            required
+                        >
+
+                        @error('low_stock_threshold')
+                            <div class="invalid-feedback">
+                                {{ $message }}
+                            </div>
+                        @enderror
+
+                    </div>
+
+
+                    {{-- Adjustment Note --}}
+                    <div class="form-group mb-0">
+
+                        <label for="adjustment_note">
+                            Audit Adjustment Log Tracking Note
+                        </label>
+
+                        <textarea
+                            name="adjustment_note"
+                            id="adjustment_note"
+                            class="form-control @error('adjustment_note') is-invalid @enderror"
+                            rows="4"
+                            placeholder="Describe context for manual changes (e.g., Physical cycle count correction, inbound damages item processing...)"
+                        >{{ old('adjustment_note') }}</textarea>
+
+                        @error('adjustment_note')
+                            <div class="invalid-feedback">
+                                {{ $message }}
+                            </div>
+                        @enderror
+
                     </div>
 
                 </div>
+
+
+                {{-- Buttons --}}
+                <div class="card-footer">
+
+                    <button type="submit"
+                            class="btn btn-primary">
+
+                        <i class="fas fa-save mr-1"></i>
+                        Apply Limits
+
+                    </button>
+
+                    <a href="{{ route('admin.stock.index') }}"
+                       class="btn btn-secondary">
+
+                        <i class="fas fa-arrow-left mr-1"></i>
+                        Back to Stock
+
+                    </a>
+
+                </div>
+
             </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
-                <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> Apply Limits</button>
-                <a href="{{ route('admin.stock.index') }}" class="btn btn-secondary">Back to Stock</a>
-            </div>
         </form>
+
     </div>
 
-    {{-- ── RIGHT PANEL: QUICK MATHS ACCELERATION MODIFIER ENGINE ── --}}
-    <div class="side-col">
-        <div class="admin-card">
-            <div class="admin-card-header">
-                <i class="fa-solid fa-calculator" style="color: var(--accent-4);"></i> Quick Increment Adjuster
+
+    {{-- =====================================================
+         RIGHT PANEL
+    ====================================================== --}}
+    <div class="col-md-4">
+
+        <div class="card card-primary">
+
+            <div class="card-header">
+
+                <h3 class="card-title">
+
+                    <i class="fas fa-calculator mr-2"></i>
+                    Quick Increment Adjuster
+
+                </h3>
+
             </div>
-            <div class="admin-card-body">
-                
-                <div class="meta-display-box">
-                    <div class="meta-row">
-                        <span class="meta-label">On Hand Balance:</span>
-                        <span class="meta-val">{{ $stock->quantity }}</span>
+
+
+            <div class="card-body">
+
+                {{-- Current Balance --}}
+                <div class="info-box bg-light">
+
+                    <span class="info-box-icon bg-primary">
+                        <i class="fas fa-boxes"></i>
+                    </span>
+
+                    <div class="info-box-content">
+
+                        <span class="info-box-text">
+                            On Hand Balance
+                        </span>
+
+                        <span class="info-box-number">
+                            {{ $currentQty }}
+                        </span>
+
                     </div>
-                    <div class="meta-row">
-                        <span class="meta-label">Warning Line:</span>
-                        <span class="meta-val" style="color: var(--accent-4);">≤ {{ $stock->low_stock_threshold }}</span>
-                    </div>
+
                 </div>
 
-                <form method="POST" action="{{ route('admin.stock.adjust', $stock) }}">
+
+                {{-- Warning Line --}}
+                <div class="info-box bg-light">
+
+                    <span class="info-box-icon bg-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </span>
+
+                    <div class="info-box-content">
+
+                        <span class="info-box-text">
+                            Warning Line
+                        </span>
+
+                        <span class="info-box-number">
+                            ≤ {{ $threshold }}
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                {{-- Adjustment Form --}}
+                <form method="POST"
+                      action="{{ route('admin.stock.adjust', ['stock' => $stock->id, 'type' => $stockType]) }}">
+
                     @csrf
-                    
+                    <input type="hidden" name="stock_type" value="{{ $stockType }}">
+
+                    {{-- Action Type --}}
                     <div class="form-group">
-                        <label class="form-label">Select Action Modifier Type</label>
-                        <div class="adjustment-tool-group">
-                            <select name="type" class="form-select" required>
-                                <option value="add">Add (+)</option>
-                                <option value="subtract">Subtract (-)</option>
-                                <option value="set">Set to (=)</option>
-                            </select>
-                            <input type="number" name="amount" class="form-control" style="font-family: var(--mono);" min="0" placeholder="Amount units" required>
-                        </div>
+
+                        <label for="type">
+                            Select Action Modifier Type
+                        </label>
+
+                        <select
+                            name="type"
+                            id="type"
+                            class="form-control"
+                            required>
+
+                            <option value="add">
+                                Add (+)
+                            </option>
+
+                            <option value="subtract">
+                                Subtract (-)
+                            </option>
+
+                            <option value="set">
+                                Set to (=)
+                            </option>
+
+                        </select>
+
                     </div>
 
+
+                    {{-- Amount --}}
                     <div class="form-group">
-                        <label class="form-label">Adjustment Note</label>
-                        <input type="text" name="note" class="form-control" placeholder="Inbound batch ID, shelf swap...">
+
+                        <label for="amount">
+                            Amount
+                        </label>
+
+                        <input
+                            type="number"
+                            name="amount"
+                            id="amount"
+                            class="form-control"
+                            min="0"
+                            placeholder="Amount units"
+                            required
+                        >
+
                     </div>
 
-                    <button type="submit" class="btn btn-primary" style="background: var(--surface); border: 1px solid var(--border); color: var(--text-1);">
-                        <i class="fa-solid fa-bolt" style="color: var(--accent-2);"></i> Execute Adjustment
+
+                    {{-- Adjustment Note --}}
+                    <div class="form-group">
+
+                        <label for="note">
+                            Adjustment Note
+                        </label>
+
+                        <input
+                            type="text"
+                            name="note"
+                            id="note"
+                            class="form-control"
+                            placeholder="Inbound batch ID, shelf swap..."
+                        >
+
+                    </div>
+
+
+                    <button type="submit"
+                            class="btn btn-primary btn-block">
+
+                        <i class="fas fa-bolt mr-1"></i>
+                        Execute Adjustment
+
                     </button>
+
                 </form>
 
             </div>
+
         </div>
+
     </div>
 
 </div>

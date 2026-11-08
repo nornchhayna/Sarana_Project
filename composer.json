@@ -10,6 +10,7 @@
         "bacon/bacon-qr-code": "^2.0",
         "barryvdh/laravel-dompdf": "^3.1",
         "chillerlan/php-qrcode": "^6.0",
+        "doctrine/dbal": "^4.5",
         "khqr-gateway/bakong-khqr-php": "^1.0",
         "laravel/framework": "^13.8",
         "laravel/sanctum": "^4.3",

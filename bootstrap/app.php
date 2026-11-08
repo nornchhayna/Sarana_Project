@@ -34,9 +34,16 @@ return Application::configure(basePath: dirname(__DIR__))
             'webmaster' => WebmasterMiddleware::class,
             'auth.guard' => SetAuthGuard::class,
             'set.locale' => \App\Http\Middleware\SetLocale::class,
+            'prevent.admin' => \App\Http\Middleware\PreventAdminAccess::class,
         ]);
 
+        // Configure CORS for Flutter app
+        $middleware->api(prepend: \Illuminate\Http\Middleware\HandleCors::class);
+        
         $middleware->web(\App\Http\Middleware\SetLocale::class);
+
+        // Prevent admins from accessing customer-facing site
+        $middleware->web(\App\Http\Middleware\PreventAdminAccess::class);
 
         // Redirect unauthenticated users to the correct login page
         $middleware->redirectGuestsTo(function ($request) {

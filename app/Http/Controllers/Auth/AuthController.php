@@ -136,7 +136,7 @@ class AuthController extends Controller
         $request->session()->forget('register_data');
         Auth::login($user);
 
-        return redirect()->intended(route('customer.dashboard'))
+        return redirect()->intended(route('home.index'))
             ->with('success', 'Welcome, '.$user->name.'! Your account is ready.');
     }
 

@@ -108,7 +108,7 @@ body {
     @else
         <div class="topbar-announcement">
             <div class="container">
-  <span>  ហាងលក់ទូរស័ព្ទដៃធំជាងគេលើពិភពលោក&nbsp;|&nbsp; ប្រើប្រាស់ Promote code <strong>គុកព្រៃស</strong> ដើម្បីទទួលបានការបញ្ចុះតំលៃ 10%</span>            </div>
+  <span>  ហាងលក់ទូរស័ព្ទដៃទំនើប&nbsp;|&nbsp; ប្រើប្រាស់ Promote code <strong>Asahi</strong> ដើម្បីទទួលបានការបញ្ចុះតំលៃ 10%</span>            </div>
         </div>
     @endif
     @include('layouts.partials.navbar')

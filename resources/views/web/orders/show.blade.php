@@ -161,7 +161,7 @@
 
     {{-- ── ITEMS: MOBILE CARDS ── --}}
     <div class="md:hidden space-y-4 mb-6">
-        @forelse($order->items as $item)
+        @forelse($order->items->where('is_gift', false) as $item)
             @php
                 // Try to get variant image matching the selected color
                 $variantImage = null;
@@ -199,6 +199,15 @@
                     </div>
                     <div class="text-sm font-bold text-gray-800 flex-shrink-0">{{ config('app.currency_symbol', '$') }}{{ number_format($item->subtotal, 2) }}</div>
                 </div>
+                
+                {{-- Gift items for this product --}}
+                @foreach($order->items->where('parent_order_item_id', $item->id) as $giftItem)
+                    <div class="mt-3 pt-3 border-t border-gray-100 flex items-center gap-2 text-xs text-gray-600">
+                        <span>🎁</span>
+                        <span>{{ $giftItem->product_name }} × {{ $giftItem->quantity }} (Free)</span>
+                    </div>
+                @endforeach
+                
                 @if($order->status === 'delivered')
                     <div class="mt-3 pt-3 border-t">
                         @if($item->product && in_array($item->product->id, $reviewedProductIds))
@@ -234,7 +243,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse($order->items as $item)
+                    @forelse($order->items->where('is_gift', false) as $item)
                     @php
                         // Try to get variant image matching the selected color
                         $variantImage = null;
@@ -269,6 +278,12 @@
                                     {{ collect([$item->color_name, $item->storage_capacity, $item->phoneStorage?->capacity])->filter()->implode(' • ') }}
                                 </div>
                             @endif
+                            {{-- Gift items for this product --}}
+                            @foreach($order->items->where('parent_order_item_id', $item->id) as $giftItem)
+                                <div class="text-xs text-gray-600 mt-1">
+                                    🎁 {{ $giftItem->product_name }} × {{ $giftItem->quantity }} (Free)
+                                </div>
+                            @endforeach
                         </td>
                         <td class="px-6 py-4 text-center text-sm font-semibold text-gray-800">{{ $item->quantity }}</td>
                         <td class="px-6 py-4 text-right text-sm text-gray-700">{{ config('app.currency_symbol', '$') }}{{ number_format($item->unit_price, 2) }}</td>

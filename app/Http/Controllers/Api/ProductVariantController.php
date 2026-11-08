@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\API;
+namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Product;
@@ -18,9 +18,15 @@ class ProductVariantController extends Controller
             'product_id' => 'required|exists:products,id',
             'color_id' => 'nullable|exists:colors,id',
             'phone_storage_id' => 'nullable|exists:phone_storages,id',
+            'storage_id' => 'nullable|exists:phone_storages,id',
+            'phone_ram_id' => 'nullable|exists:phone_rams,id',
+            'ram_id' => 'nullable|exists:phone_rams,id',
         ]);
 
-        $variant = ProductVariant::with(['color', 'phoneStorage'])
+        $storageId = $request->input('phone_storage_id') ?? $request->input('storage_id');
+        $ramId = $request->input('phone_ram_id') ?? $request->input('ram_id');
+
+        $variant = ProductVariant::with(['color', 'phoneStorage', 'phoneRam'])
             ->where('product_id', $request->product_id)
             ->where('is_active', true);
 
@@ -28,13 +34,45 @@ class ProductVariantController extends Controller
             $variant->where('color_id', $request->color_id);
         }
 
-        if ($request->filled('phone_storage_id')) {
-            $variant->where('phone_storage_id', $request->phone_storage_id);
+        if ($storageId) {
+            $variant->where('phone_storage_id', $storageId);
+        }
+
+        if ($ramId) {
+            $variant->where('phone_ram_id', $ramId);
         }
 
         $variant = $variant->first();
 
         if (!$variant) {
+            $product = Product::with(['stock'])->find($request->product_id);
+            if ($product) {
+                $specificStock = $product->total_stock;
+                if ($request->filled('color_id') || $storageId) {
+                    $stockRecord = $product->stock()
+                        ->when($request->filled('color_id'), fn($q) => $q->where('color_id', $request->color_id))
+                        ->when($storageId, fn($q) => $q->where('phone_storage_id', $storageId))
+                        ->first();
+                    if ($stockRecord) {
+                        $specificStock = (int) $stockRecord->quantity;
+                    }
+                }
+                return response()->json([
+                    'success' => true,
+                    'data' => [
+                        'id' => null,
+                        'price' => (string) ($product->sale_price ?? $product->base_price),
+                        'stock' => $specificStock,
+                        'sku' => $product->sku,
+                        'is_in_stock' => $specificStock > 0,
+                        'color' => null,
+                        'storage' => null,
+                        'ram' => null,
+                        'images' => [],
+                    ]
+                ]);
+            }
+
             return response()->json([
                 'success' => false,
                 'message' => 'Variant not found'
@@ -88,6 +126,11 @@ class ProductVariantController extends Controller
                     'capacity' => $variant->phoneStorage->capacity,
                     'label' => $variant->phoneStorage->label,
                 ] : null,
+                'ram' => $variant->phoneRam ? [
+                    'id' => $variant->phoneRam->id,
+                    'capacity' => $variant->phoneRam->capacity,
+                    'label' => $variant->phoneRam->label ?? $variant->phoneRam->capacity,
+                ] : null,
                 'images' => $images,
             ]
         ]);
@@ -124,6 +167,11 @@ class ProductVariantController extends Controller
                     'id' => $variant->phoneStorage->id,
                     'capacity' => $variant->phoneStorage->capacity,
                     'label' => $variant->phoneStorage->label,
+                ] : null,
+                'ram' => $variant->phoneRam ? [
+                    'id' => $variant->phoneRam->id,
+                    'capacity' => $variant->phoneRam->capacity,
+                    'label' => $variant->phoneRam->label ?? $variant->phoneRam->capacity,
                 ] : null,
             ])
         ]);

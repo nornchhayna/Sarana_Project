@@ -5,42 +5,49 @@
 
 @section('content')
 
-{{-- ── TOOLBAR ── --}}
-<div class="page-toolbar">
-    <div>
-        <a href="{{ route('admin.products.create') }}" class="btn-primary">
-            <i class="fa-solid fa-plus"></i> Add Product
-        </a>
-    </div>
-    
-    <form class="filters" method="GET">
-        <input type="text" name="search" value="{{ request('search') }}" class="form-input" placeholder="Search products…">
-        
-        <select name="category" class="form-select" style="width: 160px;">
-            <option value="">All Categories</option>
-            @foreach($categories as $cat)
-                <option value="{{ $cat->id }}" @selected(request('category') == $cat->id)>{{ $cat->name }}</option>
-            @endforeach
-        </select>
-        
-        <select name="brand" class="form-select" style="width: 140px;">
-            <option value="">All Brands</option>
-            @foreach($brands as $brand)
-                <option value="{{ $brand->id }}" @selected(request('brand') == $brand->id)>{{ $brand->name }}</option>
-            @endforeach
-        </select>
-        
-        <button class="btn-secondary">Filter</button>
-    </form>
-</div>
-
-{{-- ── PRODUCTS TABLE ── --}}
 <div class="card">
-    <div class="table-wrap">
-        <table>
+    <div class="card-header">
+        <h3 class="card-title">Products List</h3>
+        <div class="card-tools">
+            <a href="{{ route('admin.products.create') }}" class="btn btn-primary btn-sm">
+                <i class="fas fa-plus"></i> Add Product
+            </a>
+        </div>
+    </div>
+
+    <div class="card-body p-0">
+        <div class="row mb-3 p-3">
+            <div class="col-md-12">
+                <form class="form-inline" method="GET">
+                    <div class="input-group input-group-sm mr-2">
+                        <input type="text" name="search" value="{{ request('search') }}" class="form-control" placeholder="Search products…">
+                    </div>
+
+                    <select name="category" class="form-control form-control-sm mr-2" style="width: 160px;">
+                        <option value="">All Categories</option>
+                        @foreach($categories as $cat)
+                            <option value="{{ $cat->id }}" @selected(request('category') == $cat->id)>{{ $cat->name }}</option>
+                        @endforeach
+                    </select>
+
+                    <select name="brand" class="form-control form-control-sm mr-2" style="width: 140px;">
+                        <option value="">All Brands</option>
+                        @foreach($brands as $brand)
+                            <option value="{{ $brand->id }}" @selected(request('brand') == $brand->id)>{{ $brand->name }}</option>
+                        @endforeach
+                    </select>
+
+                    <button type="submit" class="btn btn-secondary btn-sm">
+                        <i class="fas fa-filter"></i> Filter
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <table class="table table-striped table-hover">
             <thead>
                 <tr>
-                    <th style="width:60px; padding-left: 22px;">Img</th>
+                    <th style="width:60px;">Img</th>
                     <th>Name / SKU</th>
                     <th>Category</th>
                     <th>Brand</th>
@@ -48,68 +55,66 @@
                     <th>Sale Price</th>
                     <th>Stock</th>
                     <th>Status</th>
-                    <th style="text-align: center;">Featured</th>
-                    <th style="text-align: right; padding-right: 22px;">Actions</th>
+                    <th class="text-center">Featured</th>
+                    <th class="text-right">Actions</th>
                 </tr>
             </thead>
             <tbody>
                 @forelse($products as $product)
                 <tr>
-                    <td style="padding-left: 22px;">
+                    <td>
                         @if($product->thumbnail)
-                            <div class="product-thumb">
-                                <img src="{{ asset('storage/'.$product->thumbnail) }}" alt="{{ $product->name }}">
-                            </div>
+                            <img src="{{ asset('storage/'.$product->thumbnail) }}" alt="{{ $product->name }}" style="width:40px; height:40px; object-fit:cover; border-radius:4px;">
                         @else
-                            <div class="product-thumb">
-                                <i class="fa-solid fa-image"></i>
+                            <div style="width:40px; height:40px; background:#f0f0f0; border-radius:4px; display:flex; align-items:center; justify-content:center; color:#999;">
+                                <i class="fas fa-image"></i>
                             </div>
                         @endif
                     </td>
                     <td>
-                        <div style="color: var(--text-1); font-weight: 600;">{{ $product->name }}</div>
-                        <div class="prod-sku">{{ $product->sku }}</div>
+                        <div style="font-weight:600;">{{ $product->name }}</div>
+                        <div style="font-size:12px; color:#6c757d;">{{ $product->sku }}</div>
                     </td>
-                    <td style="font-family: var(--mono); color: var(--text-1);">{{ $product->category->name }}</td>
-                    <td style="font-family: var(--mono); color: var(--text-1);">{{ $product->brand->name }}</td>
-                    <td style="font-family: var(--mono); color: var(--text-1);">${{ number_format($product->base_price, 2) }}</td>
-                    <td style="font-family: var(--mono); color: var(--accent-1);">
+                    <td>{{ $product->category->name }}</td>
+                    <td>{{ $product->brand->name }}</td>
+                    <td>${{ number_format($product->base_price, 2) }}</td>
+                    <td>
                         {{ $product->sale_price ? '$'.number_format($product->sale_price,2) : '—' }}
                     </td>
                     <td>
-                        @php $stockTotal = $product->stock->sum('quantity'); @endphp
+                        @php $stockTotal = $product->variants->sum('stock'); @endphp
                         @if($stockTotal > 5)
-                            <span class="status-badge status-paid">{{ $stockTotal }} In Stock</span>
+                            <span class="badge badge-success">{{ $stockTotal }} In Stock</span>
                         @elseif($stockTotal > 0)
-                            <span class="status-badge status-pending">{{ $stockTotal }} Low</span>
+                            <span class="badge badge-warning">{{ $stockTotal }} Low</span>
                         @else
-                            <span class="status-badge status-cancelled">Out of Stock</span>
+                            <span class="badge badge-danger">Out of Stock</span>
                         @endif
                     </td>
                     <td>
-                        <span class="status-badge {{ $product->is_active ? 'status-paid' : 'status-pending' }}">
+                        <span class="badge {{ $product->is_active ? 'badge-success' : 'badge-secondary' }}">
                             {{ $product->is_active ? 'Active' : 'Inactive' }}
                         </span>
                     </td>
-                    <td style="text-align: center;">
+                    <td class="text-center">
                         @if($product->is_featured)
-                            <i class="fa-solid fa-star" style="color: var(--accent-4);"></i>
+                            <i class="fas fa-star text-warning"></i>
                         @else
-                            <i class="fa-regular fa-star" style="color: var(--text-3);"></i>
+                            <i class="far fa-star text-muted"></i>
                         @endif
                     </td>
-                    <td style="padding-right: 22px;">
-                        <div class="action-group">
-                            <a href="{{ route('admin.products.show', $product) }}" class="btn-action" title="View">
-                                <i class="fa-solid fa-eye"></i>
+                    <td class="text-right">
+                        <div class="btn-group btn-group-sm">
+                            <a href="{{ route('admin.products.show', $product) }}" class="btn btn-info" title="View">
+                                <i class="fas fa-eye"></i>
                             </a>
-                            <a href="{{ route('admin.products.edit', $product) }}" class="btn-action" title="Edit">
-                                <i class="fa-solid fa-pen"></i>
+                            <a href="{{ route('admin.products.edit', $product) }}" class="btn btn-primary" title="Edit">
+                                <i class="fas fa-pen"></i>
                             </a>
                             <form method="POST" action="{{ route('admin.products.destroy', $product) }}" onsubmit="return confirm('Delete this product?')" style="margin: 0;">
                                 @csrf @method('DELETE')
-                                <button class="btn-action delete" title="Delete">
-                                    <i class="fa-solid fa-trash"></i>
+                                <button class="btn btn-danger" title="Delete">
+                                    <i class="fas fa-trash"></i>
                                 </button>
                             </form>
                         </div>
@@ -117,13 +122,13 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="10" style="text-align: center; padding: 40px; color: var(--text-3);">No products found.</td>
+                    <td colspan="10" class="text-center py-4 text-muted">No products found.</td>
                 </tr>
                 @endforelse
             </tbody>
         </table>
     </div>
-    
+
     {{-- Pagination --}}
     @if($products->hasPages())
     <div class="card-footer">

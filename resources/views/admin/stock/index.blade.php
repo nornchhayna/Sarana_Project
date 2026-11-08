@@ -1,188 +1,507 @@
 @extends('layouts.admin')
+
 @section('title', 'Stock Control')
 @section('page-title', 'Inventory Stock')
 
 @section('content')
 
-{{-- ── INVENTORY GRID & COMPONENT CSS OVERRIDES ── --}}
-<style>
-    .page-toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; gap: 16px; flex-wrap: wrap; }
-    
-    .btn-primary { background: var(--accent, #5B6EF5); color: #fff; padding: 9px 16px; border-radius: 8px; text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; font-size: 13px; transition: all 0.2s; border: none; cursor: pointer; }
-    .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(91, 110, 245, 0.2); }
-    .btn-secondary { background: var(--card, #1A1E2B); color: var(--text-1, #E8EAF2); border: 1px solid var(--border, #252A3A); padding: 9px 16px; border-radius: 8px; font-weight: 600; font-size: 13px; cursor: pointer; transition: all 0.2s; }
-    .btn-secondary:hover { border-color: var(--accent, #5B6EF5); color: var(--accent, #5B6EF5); }
-    
-    .filters { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
-    .form-input, .form-select { background: var(--bg, #0C0E14); border: 1px solid var(--border, #252A3A); color: var(--text-1, #E8EAF2); padding: 9px 12px; border-radius: 8px; font-size: 13px; font-family: var(--sans, sans-serif); outline: none; transition: border-color 0.2s; }
-    .form-input:focus, .form-select:focus { border-color: var(--accent, #5B6EF5); }
-    .form-select option { background: var(--card, #1A1E2B); color: var(--text-1, #E8EAF2); }
+{{-- =========================================================
+     INVENTORY SUMMARY
+========================================================= --}}
 
-    /* Inventory Cards Grid Layout */
-    .mini-summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
-    .summary-item-card { background: var(--card, #1A1E2B); border: 1px solid var(--border, #252A3A); border-radius: 12px; padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; }
-    .summary-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; font-weight: 600; color: var(--text-3, #555B72); margin-bottom: 4px; }
-    .summary-metric { font-size: 24px; font-family: var(--mono, monospace); font-weight: 700; color: var(--text-1, #E8EAF2); }
-    .summary-icon-box { width: 40px; height: 40px; border-radius: 8px; display: grid; place-items: center; font-size: 16px; }
+<div class="row mb-3">
 
-    /* Stock Inline Inputs style */
-    .inline-stock-input { background: var(--bg, #0C0E14); border: 1px solid var(--border, #252A3A); color: var(--text-1, #E8EAF2); width: 70px; padding: 6px; border-radius: 6px; text-align: center; font-family: var(--mono, monospace); font-size: 13px; }
-    .inline-stock-input:focus { border-color: var(--accent, #5B6EF5); outline: none; }
-    
-    .variant-pill { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-family: var(--mono, monospace); color: var(--text-2, #8B90A7); background: rgba(255,255,255,0.03); border: 1px solid var(--border, #252A3A); padding: 2px 6px; border-radius: 4px; margin-top: 4px; }
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-muted text-uppercase small">
+                        Total Hand Quantity
+                    </div>
 
-    .action-group { display: flex; gap: 6px; justify-content: flex-end; }
-    .btn-action { width: 32px; height: 32px; border-radius: 6px; border: 1px solid var(--border, #252A3A); background: var(--card, #1A1E2B); color: var(--text-2, #8B90A7); display: grid; place-items: center; cursor: pointer; transition: all 0.2s; text-decoration: none; font-size: 13px; }
-    .btn-action:hover { border-color: var(--accent, #5B6EF5); color: var(--text-1, #E8EAF2); background: rgba(91, 110, 245, 0.1); }
+                    <h3 class="mb-0">
+                        {{ number_format($summary['total_items']) }}
+                    </h3>
+                </div>
 
-    .table-wrap { overflow-x: auto; background: var(--card, #1A1E2B); border-radius: 12px; border: 1px solid var(--border, #252A3A); }
-    table { width: 100%; border-collapse: collapse; }
-    thead th { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--text-3, #555B72); padding: 14px 22px; text-align: left; border-bottom: 1px solid var(--border, #252A3A); }
-    tbody tr { border-bottom: 1px solid rgba(37, 42, 58, 0.5); }
-    tbody tr:hover { background: rgba(255, 255, 255, 0.02); }
-    tbody td { padding: 14px 22px; font-size: 13px; color: var(--text-2, #8B90A7); vertical-align: middle; }
-    
-    .status-badge { font-size: 10px; font-weight: 600; padding: 4px 10px; border-radius: 20px; font-family: monospace; display: inline-block; }
-    .status-paid { background: rgba(0, 212, 170, 0.12); color: #00D4AA; }
-    .status-pending { background: rgba(245, 166, 35, 0.12); color: #F5A623; }
-    .status-cancelled { background: rgba(255, 92, 122, 0.12); color: #FF5C7A; }
-    .card-footer { padding: 16px 22px; border-top: 1px solid var(--border, #252A3A); }
-</style>
-
-{{-- ── INVENTORY SUMMARY BAR ── --}}
-<div class="mini-summary-grid">
-    <div class="summary-item-card">
-        <div>
-            <div class="summary-title">Total Hand Quantity</div>
-            <div class="summary-metric">{{ number_format($summary['total_items']) }}</div>
-        </div>
-        <div class="summary-icon-box" style="background: rgba(91, 110, 245, 0.1); color: var(--accent);">
-            <i class="fa-solid fa-warehouse"></i>
-        </div>
-    </div>
-    
-    <div class="summary-item-card">
-        <div>
-            <div class="summary-title">Low Stock SKUs</div>
-            <div class="summary-metric">{{ $summary['low_stock'] }}</div>
-        </div>
-        <div class="summary-icon-box" style="background: rgba(245, 166, 35, 0.1); color: var(--accent-4);">
-            <i class="fa-solid fa-triangle-exclamation"></i>
+                <div class="text-primary">
+                    <i class="fas fa-warehouse fa-2x"></i>
+                </div>
+            </div>
         </div>
     </div>
 
-    <div class="summary-item-card">
-        <div>
-            <div class="summary-title">Out Of Stock</div>
-            <div class="summary-metric" style="color: var(--accent-3);">{{ $summary['out_of_stock'] }}</div>
-        </div>
-        <div class="summary-icon-box" style="background: rgba(255, 92, 122, 0.1); color: var(--accent-3);">
-            <i class="fa-solid fa-circle-xmark"></i>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-muted text-uppercase small">
+                        Low Stock SKUs
+                    </div>
+
+                    <h3 class="mb-0">
+                        {{ $summary['low_stock'] }}
+                    </h3>
+                </div>
+
+                <div class="text-warning">
+                    <i class="fas fa-exclamation-triangle fa-2x"></i>
+                </div>
+            </div>
         </div>
     </div>
+
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-muted text-uppercase small">
+                        Out Of Stock
+                    </div>
+
+                    <h3 class="mb-0 text-danger">
+                        {{ $summary['out_of_stock'] }}
+                    </h3>
+                </div>
+
+                <div class="text-danger">
+                    <i class="fas fa-times-circle fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div>
 
-{{-- ── FILTER SETTOOLBAR ── --}}
-<div class="page-toolbar">
-    <form class="filters" method="GET" style="width: 100%; justify-content: space-between;">
-        <div style="display: flex; gap: 12px; align-items: center;">
-            <input type="text" name="search" value="{{ request('search') }}" class="form-input" placeholder="Search product name, SKU…" style="width: 240px;">
-            
-            <select name="stock_status" class="form-select" style="width: 150px;">
-                <option value="">All Stock Levels</option>
-                <option value="ok" @selected(request('stock_status') === 'ok')>Stock OK</option>
-                <option value="low" @selected(request('stock_status') === 'low')>Low Stock</option>
-                <option value="out" @selected(request('stock_status') === 'out')>Out of Stock</option>
-            </select>
-            
-            <select name="product" class="form-select" style="width: 200px; max-width: 250px;">
-                <option value="">Filter By Specific Product...</option>
-                @foreach($products as $prod)
-                    <option value="{{ $prod->id }}" @selected(request('product') == $prod->id)>{{ $prod->name }}</option>
-                @endforeach
-            </select>
 
-            <button class="btn-secondary">Filter</button>
-        </div>
-        
-        {{-- Bulk Update Form Submission Connection Trigger Button --}}
-        <button type="button" onclick="document.getElementById('bulk-stock-form').submit();" class="btn-primary">
-            <i class="fa-solid fa-cloud-arrow-up"></i> Save Bulk Quantities
-        </button>
-    </form>
+{{-- =========================================================
+     FILTER TOOLBAR
+========================================================= --}}
+
+<div class="card">
+
+    <div class="card-header">
+
+        <h3 class="card-title">
+            <i class="fas fa-filter mr-2"></i>
+            Inventory Filters
+        </h3>
+
+    </div>
+
+    <div class="card-body">
+
+        <form method="GET">
+
+            <div class="row align-items-end">
+
+                {{-- Search --}}
+                <div class="col-md-3">
+
+                    <div class="form-group mb-md-0">
+
+                        <label>
+                            Search
+                        </label>
+
+                        <input
+                            type="text"
+                            name="search"
+                            value="{{ request('search') }}"
+                            class="form-control"
+                            placeholder="Search product name, SKU..."
+                        >
+
+                    </div>
+
+                </div>
+
+
+                {{-- Stock Status --}}
+                <div class="col-md-2">
+
+                    <div class="form-group mb-md-0">
+
+                        <label>
+                            Stock Level
+                        </label>
+
+                        <select
+                            name="stock_status"
+                            class="form-control">
+
+                            <option value="">
+                                All Stock Levels
+                            </option>
+
+                            <option value="ok"
+                                @selected(request('stock_status') === 'ok')}>
+                                Stock OK
+                            </option>
+
+                            <option value="low"
+                                @selected(request('stock_status') === 'low')}>
+                                Low Stock
+                            </option>
+
+                            <option value="out"
+                                @selected(request('stock_status') === 'out')}>
+                                Out of Stock
+                            </option>
+
+                        </select>
+
+                    </div>
+
+                </div>
+
+
+                {{-- Filter --}}
+                <div class="col-md-2">
+
+                    <div class="form-group mb-md-0">
+
+                        <button
+                            type="submit"
+                            class="btn btn-secondary">
+
+                            <i class="fas fa-filter mr-1"></i>
+                            Filter
+
+                        </button>
+
+                    </div>
+
+                </div>
+
+
+                {{-- Bulk Update --}}
+                <div class="col-md-2 text-md-right">
+
+                    <button
+                        type="button"
+                        onclick="document.getElementById('bulk-stock-form').submit();"
+                        class="btn btn-primary">
+
+                        <i class="fas fa-cloud-upload-alt mr-1"></i>
+                        Save Bulk Quantities
+
+                    </button>
+
+                </div>
+
+            </div>
+
+        </form>
+
+    </div>
+
 </div>
 
-{{-- ── MAIN BATCH STOCK TABLE ── --}}
-<form id="bulk-stock-form" method="POST" action="{{ route('admin.stock.bulk-update') }}">
-    @csrf @method('PUT')
-    
-    <div class="table-wrap">
-        <table>
-            <thead>
-                <tr>
-                    <th style="padding-left: 22px;">Product Asset Target</th>
-                    <th>Variant Options</th>
-                    <th>Current Level</th>
-                    <th>Stock Quantity</th>
-                    <th>SKU</th>
-                    <th style="text-align: right; padding-right: 22px;">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse($stocks as $index => $stock)
-                <tr>
-                    <td style="padding-left: 22px;">
-                        <input type="hidden" name="stocks[{{ $index }}][id]" value="{{ $stock->id }}">
-                        <div style="color: var(--text-1, #E8EAF2); font-weight: 600;">{{ $stock->product->name ?? '—' }}</div>
-                        <div class="variant-pill" style="font-size: 10px;">SKU: {{ $stock->product->sku ?? '—' }}</div>
-                    </td>
-                    <td>
-                        @if($stock->color || $stock->phoneStorage)
-                            <div class="variant-pill">
-                                <i class="fa-solid fa-sliders" style="font-size: 10px; color: var(--text-3)"></i>
-                                {{ $stock->color->name ?? '' }} {{ $stock->phoneStorage->capacity ?? '' }}
-                            </div>
-                        @else
-                            <span style="color: var(--text-3);">Standard (No Variants)</span>
-                        @endif
-                    </td>
-                    <td>
-                        @if($stock->stock == 0)
-                            <span class="status-badge status-cancelled">Out Of Stock</span>
-                        @elseif($stock->stock <= 10)
-                            <span class="status-badge status-pending">Low Stock Alert</span>
-                        @else
-                            <span class="status-badge status-paid">Healthy</span>
-                        @endif
-                    </td>
-                    <td>
-                        <input type="number" name="stocks[{{ $index }}][stock]" value="{{ old("stocks.{$index}.stock", $stock->stock) }}" class="inline-stock-input" min="0" required>
-                    </td>
-                    <td>
-                        <input type="number" name="stocks[{{ $index }}][sku]" value="{{ old("stocks.{$index}.sku", $stock->sku) }}" class="inline-stock-input" placeholder="SKU">
-                    </td>
-                    <td style="padding-right: 22px;">
-                        <div class="action-group">
-                            <a href="{{ route('admin.stock.edit', $stock) }}" class="btn-action" title="Adjust Balance Logs">
-                                <i class="fa-solid fa-pen-to-square"></i>
-                            </a>
-                        </div>
-                    </td>
-                </tr>
-                @empty
-                <tr>
-                    <td colspan="6" style="text-align: center; padding: 40px; color: var(--text-3, #555B72);">No inventory SKU tracking targets mapped.</td>
-                </tr>
-                @endforelse
-            </tbody>
-        </table>
-        
-        @if($stocks->hasPages())
-        <div class="card-footer">
-            {{ $stocks->links() }}
+
+{{-- =========================================================
+     MAIN STOCK TABLE
+========================================================= --}}
+
+<form
+    id="bulk-stock-form"
+    method="POST"
+    action="{{ route('admin.stock.bulk-update') }}">
+
+    @csrf
+    @method('PUT')
+
+    <div class="card">
+
+        <div class="card-header">
+
+            <h3 class="card-title">
+                <i class="fas fa-boxes mr-2"></i>
+                Inventory Stock
+            </h3>
+
         </div>
+
+
+        <div class="card-body p-0">
+
+            <div class="table-responsive">
+
+                <table class="table table-hover table-striped mb-0">
+
+                    <thead>
+
+                        <tr>
+
+                            <th style="width: 40%;">
+                                Product
+                            </th>
+
+                            <th style="width: 15%;">
+                                Total Stock
+                            </th>
+
+                            <th style="width: 10%;">
+                                Variants
+                            </th>
+
+                            <th style="width: 10%;">
+                                Status
+                            </th>
+
+                            <th class="text-right" style="width: 25%;">
+                                Actions
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody>
+
+                        @forelse($groupedStocksPaginated as $group)
+
+                            @php
+                                $product = $group['product'];
+                                $variants = $group['variants'];
+                                $totalStock = $group['total_stock'];
+                                $variantCount = $group['variant_count'];
+                            @endphp
+
+                            {{-- Product Row --}}
+                            <tr data-product-id="{{ $product->id }}" style="cursor: pointer;" onclick="toggleVariants({{ $product->id }})">
+
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <i id="toggle-icon-{{ $product->id }}" class="fas fa-chevron-right mr-2 text-muted"></i>
+                                        <div>
+                                            <strong>{{ $product->name }}</strong>
+                                            <br>
+                                            <small class="text-muted">SKU: {{ $product->sku ?? '—' }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <td>
+                                    <span class="badge {{ $totalStock == 0 ? 'badge-danger' : ($totalStock <= 10 ? 'badge-warning' : 'badge-success') }}">
+                                        {{ number_format($totalStock) }}
+                                    </span>
+                                </td>
+
+                                <td>
+                                    @if($variantCount > 0)
+                                        <span class="badge badge-info">{{ $variantCount }} variant{{ $variantCount > 1 ? 's' : '' }}</span>
+                                    @else
+                                        <span class="badge badge-secondary"><i class="fas fa-box mr-1"></i> Single Item</span>
+                                    @endif
+                                </td>
+
+                                <td>
+                                    @if($totalStock == 0)
+                                        <span class="badge badge-danger">Out of Stock</span>
+                                    @elseif($totalStock <= 10)
+                                        <span class="badge badge-warning">Low Stock</span>
+                                    @else
+                                        <span class="badge badge-success">In Stock</span>
+                                    @endif
+                                </td>
+
+                                <td class="text-right">
+                                    @if($variantCount == 0)
+                                        <a href="{{ route('admin.stock.edit', ['stock' => $product->id, 'type' => 'product']) }}" class="btn btn-sm btn-info mr-1" title="Adjust Stock">
+                                            <i class="fas fa-pen-to-square"></i> Edit
+                                        </a>
+                                    @endif
+                                    <a href="{{ route('admin.products.show', $product) }}" class="btn btn-sm btn-secondary">
+                                        <i class="fas fa-eye"></i> View
+                                    </a>
+                                </td>
+
+                            </tr>
+
+                            {{-- Variants Row (Collapsible) --}}
+                            <tr id="variants-{{ $product->id }}" style="display: none;">
+
+                                <td colspan="5" class="p-0">
+
+                                    <table class="table table-sm mb-0">
+
+                                        <thead>
+
+                                            <tr>
+
+                                                <th>Variant</th>
+
+                                                <th>Stock</th>
+
+                                                <th>SKU</th>
+
+                                                <th>Actions</th>
+
+                                            </tr>
+
+                                        </thead>
+
+                                        <tbody>
+
+                                            @if($variantCount > 0)
+                                                @foreach($variants as $variant)
+
+                                                    <tr>
+
+                                                        <td>
+                                                            <small>
+                                                                @if($variant->color)
+                                                                    <span class="badge badge-light">{{ $variant->color->name }}</span>
+                                                                @endif
+                                                                @if($variant->phoneStorage)
+                                                                    <span class="badge badge-light">{{ $variant->phoneStorage->capacity }}</span>
+                                                                @endif
+                                                                @if($variant->phoneRam)
+                                                                    <span class="badge badge-light">{{ $variant->phoneRam->capacity }}</span>
+                                                                @endif
+                                                            </small>
+                                                        </td>
+
+                                                        <td>
+                                                            <input
+                                                                type="number"
+                                                                name="stocks[{{ $variant->id }}][stock]"
+                                                                value="{{ $variant->stock }}"
+                                                                class="form-control form-control-sm"
+                                                                min="0"
+                                                                style="width: 80px;"
+                                                            >
+                                                        </td>
+
+                                                        <td>
+                                                            <input
+                                                                type="text"
+                                                                name="stocks[{{ $variant->id }}][sku]"
+                                                                value="{{ $variant->sku }}"
+                                                                class="form-control form-control-sm"
+                                                                style="width: 120px;"
+                                                                placeholder="SKU"
+                                                            >
+                                                        </td>
+
+                                                        <td>
+                                                            <a href="{{ route('admin.stock.edit', $variant) }}" class="btn btn-sm btn-info">
+                                                                <i class="fas fa-pen-to-square"></i>
+                                                            </a>
+                                                        </td>
+
+                                                    </tr>
+
+                                                @endforeach
+                                            @else
+                                                <tr>
+                                                    <td>
+                                                        <span class="badge badge-light"><i class="fas fa-box text-muted mr-1"></i> Standard Item</span>
+                                                    </td>
+                                                    <td>
+                                                        <input
+                                                            type="number"
+                                                            name="product_stocks[{{ $product->id }}][stock]"
+                                                            value="{{ $totalStock }}"
+                                                            class="form-control form-control-sm"
+                                                            min="0"
+                                                            style="width: 80px;"
+                                                        >
+                                                    </td>
+                                                    <td>
+                                                        <input
+                                                            type="text"
+                                                            name="product_stocks[{{ $product->id }}][sku]"
+                                                            value="{{ $product->sku }}"
+                                                            class="form-control form-control-sm"
+                                                            style="width: 120px;"
+                                                            placeholder="SKU"
+                                                        >
+                                                    </td>
+                                                    <td>
+                                                        <a href="{{ route('admin.stock.edit', ['stock' => $product->id, 'type' => 'product']) }}" class="btn btn-sm btn-info" title="Adjust Stock">
+                                                            <i class="fas fa-pen-to-square"></i>
+                                                        </a>
+                                                    </td>
+                                                </tr>
+                                            @endif
+
+                                        </tbody>
+
+                                    </table>
+
+                                </td>
+
+                            </tr>
+
+                        @empty
+
+                            <tr>
+
+                                <td colspan="5" class="text-center text-muted py-5">
+
+                                    No inventory found.
+
+                                </td>
+
+                            </tr>
+
+                        @endforelse
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+
+        {{-- Pagination --}}
+        @if($groupedStocksPaginated->hasPages())
+
+            <div class="card-footer">
+
+                {{ $groupedStocksPaginated->links() }}
+
+            </div>
+
         @endif
+
     </div>
+
 </form>
+
+@push('scripts')
+<script>
+    function toggleVariants(productId) {
+        const variantsRow = document.getElementById('variants-' + productId);
+        const toggleIcon = document.getElementById('toggle-icon-' + productId);
+
+        if (variantsRow.style.display === 'none') {
+            variantsRow.style.display = 'table-row';
+            toggleIcon.classList.remove('fa-chevron-right');
+            toggleIcon.classList.add('fa-chevron-down');
+        } else {
+            variantsRow.style.display = 'none';
+            toggleIcon.classList.remove('fa-chevron-down');
+            toggleIcon.classList.add('fa-chevron-right');
+        }
+    }
+
+    // Auto-expand first product on load
+    document.addEventListener('DOMContentLoaded', function() {
+        const firstProductRow = document.querySelector('[data-product-id]');
+        if (firstProductRow) {
+            const productId = firstProductRow.getAttribute('data-product-id');
+            toggleVariants(productId);
+        }
+    });
+</script>
+@endpush
 
 @endsection

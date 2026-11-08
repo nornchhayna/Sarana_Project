@@ -2,13 +2,21 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class CartItem extends Model
 {
+    use HasFactory;
+
+    protected static function newFactory()
+    {
+        return \Database\Factories\CartItemFactory::new();
+    }
+
     protected $fillable = [
-        'cart_id', 'product_id', 'color_id', 'phone_storage_id',
+        'cart_id', 'product_id', 'product_variant_id', 'color_id', 'phone_storage_id', 'phone_ram_id',
         'quantity', 'unit_price',
     ];
 
@@ -41,6 +49,21 @@ class CartItem extends Model
     public function phoneStorage(): BelongsTo
     {
         return $this->belongsTo(PhoneStorage::class);
+    }
+
+    public function phoneRam(): BelongsTo
+    {
+        return $this->belongsTo(PhoneRam::class, 'phone_ram_id');
+    }
+
+    public function ram(): BelongsTo
+    {
+        return $this->belongsTo(PhoneRam::class, 'phone_ram_id');
+    }
+
+    public function variant(): BelongsTo
+    {
+        return $this->belongsTo(ProductVariant::class, 'product_variant_id');
     }
 
     public function setQuantityAttribute(int $value): void

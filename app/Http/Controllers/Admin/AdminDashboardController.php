@@ -21,6 +21,7 @@ class AdminDashboardController extends Controller
                 'pending_orders' => Order::where('status', 'pending')->count(),
                 'total_products' => Product::where('is_active', true)->count(),
                 'total_users' => User::where('role', 'customer')->count(),
+                'total_webmasters' => User::where('role', User::ROLE_WEBMASTER)->count(),
                 'pending_reviews' => Review::where('is_approved', false)->count(),
                 'unread_contacts' => Contact::where('status', 'unread')->count(),
             ];
@@ -51,6 +52,7 @@ class AdminDashboardController extends Controller
                 'pending_orders' => 0,
                 'total_products' => 0,
                 'total_users' => 0,
+                'total_webmasters' => 0,
                 'pending_reviews' => 0,
                 'unread_contacts' => 0,
             ];

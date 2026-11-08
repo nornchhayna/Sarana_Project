@@ -13,9 +13,15 @@
                 <div class="col-span-2 lg:col-span-1">
 
                     <a href="{{ route('home') }}" class="inline-flex items-center mb-5">
-                        <span class="text-2xl font-semibold">
-                            PhoneBy<span class="text-blue-600 font-bold">Ashahi</span>
-                        </span>
+                        @if(!empty($siteSettings['site_logo']))
+                            <img src="{{ asset('storage/' . $siteSettings['site_logo']) }}"
+                                 alt="{{ $siteSettings['site_name'] ?? 'Ashahi' }}"
+                                 style="max-height: 40px; width: auto; object-fit: contain;">
+                        @else
+                            <span class="text-2xl font-semibold">
+                                {{ $siteSettings['site_name'] ?? 'PhoneByAshahi' }}
+                            </span>
+                        @endif
                     </a>
 
                     <p class="text-sm text-gray-600 leading-7 mb-6">
@@ -140,22 +146,22 @@
                         <li class="flex items-start gap-3">
                             <i class="fa-solid fa-location-dot text-blue-600 mt-1"></i>
                             <span>
-                                {{__('messages.locate')}}
+                                {{ $siteSettings['store_address'] ?? __('messages.locate') }}
                             </span>
                         </li>
 
                         <li class="flex items-center gap-3">
                             <i class="fa-solid fa-phone text-blue-600"></i>
-                            <span>
-                                +855 96 231 6406
-                            </span>
+                            <a href="tel:{{ preg_replace('/\s+/', '', $siteSettings['store_phone'] ?? '+855962316406') }}" class="hover:text-blue-600 transition">
+                                {{ $siteSettings['store_phone'] ?? '+855 96 231 6406' }}
+                            </a>
                         </li>
 
                         <li class="flex items-center gap-3">
                             <i class="fa-solid fa-envelope text-blue-600"></i>
-                            <span>
-                                support@phonebyashahi.com
-                            </span>
+                            <a href="mailto:{{ $siteSettings['store_email'] ?? 'support@phonebyashahi.com' }}" class="hover:text-blue-600 transition">
+                                {{ $siteSettings['store_email'] ?? 'support@phonebyashahi.com' }}
+                            </a>
                         </li>
 
                         <li class="flex items-center gap-3">
@@ -174,34 +180,25 @@
                    {{-- Social --}}
                     <div class="flex flex-wrap gap-3 mt-6">
 
-                        <a href="#"
-                           class="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center hover:scale-105 transition">
+                        <a href="{{ $siteSettings['store_facebook'] ?? '#' }}"
+                           target="_blank" rel="noopener noreferrer"
+                           class="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center hover:scale-105 transition"
+                           title="Facebook">
                             <i class="fa-brands fa-facebook-f"></i>
                         </a>
 
-                        <a href="#"
-                           class="w-10 h-10 rounded-full bg-sky-500 text-white flex items-center justify-center hover:scale-105 transition">
-                            <i class="fa-brands fa-facebook-messenger"></i>
-                        </a>
-
-                        <a href="#"
-                           class="w-10 h-10 rounded-full bg-cyan-500 text-white flex items-center justify-center hover:scale-105 transition">
+                        <a href="{{ $siteSettings['store_telegram'] ?? '#' }}"
+                           target="_blank" rel="noopener noreferrer"
+                           class="w-10 h-10 rounded-full bg-cyan-500 text-white flex items-center justify-center hover:scale-105 transition"
+                           title="Telegram">
                             <i class="fa-brands fa-telegram"></i>
                         </a>
 
-                        <a href="#"
-                           class="w-10 h-10 rounded-full bg-pink-600 text-white flex items-center justify-center hover:scale-105 transition">
-                            <i class="fa-brands fa-instagram"></i>
-                        </a>
-
-                        <a href="#"
-                           class="w-10 h-10 rounded-full bg-black text-white flex items-center justify-center hover:scale-105 transition">
+                        <a href="{{ $siteSettings['store_tiktok'] ?? '#' }}"
+                           target="_blank" rel="noopener noreferrer"
+                           class="w-10 h-10 rounded-full bg-black text-white flex items-center justify-center hover:scale-105 transition"
+                           title="TikTok">
                             <i class="fa-brands fa-tiktok"></i>
-                        </a>
-
-                        <a href="#"
-                           class="w-10 h-10 rounded-full bg-red-600 text-white flex items-center justify-center hover:scale-105 transition">
-                            <i class="fa-brands fa-youtube"></i>
                         </a>
 
                     </div>

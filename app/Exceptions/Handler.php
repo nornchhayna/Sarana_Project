@@ -2,6 +2,10 @@
 
 namespace App\Exceptions;
 
+use App\Exceptions\ApiException;
+use App\Exceptions\BusinessLogicException;
+use App\Exceptions\NotFoundException;
+use App\Exceptions\UnauthorizedException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
@@ -18,6 +22,14 @@ class Handler extends ExceptionHandler
     public function register(): void
     {
         $this->renderable(function (Throwable $e, $request) {
+            // Handle custom exceptions with their own render methods
+            if ($e instanceof ApiException ||
+                $e instanceof NotFoundException ||
+                $e instanceof BusinessLogicException ||
+                $e instanceof UnauthorizedException) {
+                return $e->render($request);
+            }
+
             // Return JSON for all API routes
             if ($request->is('api/*') || $request->expectsJson()) {
                 return $this->handleApiException($e, $request);

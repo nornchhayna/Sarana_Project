@@ -13,13 +13,14 @@ class Review extends Model
     protected $fillable = [
         'product_id', 'user_id', 'order_id',
         'rating', 'title', 'body', 'images',
-        'is_verified_purchase', 'status',
+        'is_verified_purchase', 'is_approved', 'status',
     ];
 
     protected $casts = [
         'rating' => 'integer',
         'images' => 'array',
         'is_verified_purchase' => 'boolean',
+        'is_approved' => 'boolean',
     ];
 
     public function product(): BelongsTo
@@ -39,6 +40,6 @@ class Review extends Model
 
     public function scopeApproved($query)
     {
-        return $query->where('status', 'approved');
+        return $query->where('is_approved', true);
     }
 }

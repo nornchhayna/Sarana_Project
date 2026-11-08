@@ -5,191 +5,433 @@
 
 @section('content')
 
-{{-- ── FORM FRAMEWORK STYLES ── --}}
-<style>
-    .form-layout { display: grid; grid-template-columns: 1fr 360px; gap: 24px; align-items: start; }
-    
-    .admin-card { background: var(--card, #1A1E2B); border: 1px solid var(--border, #252A3A); border-radius: 12px; margin-bottom: 24px; overflow: hidden; }
-    .admin-card-header { padding: 16px 20px; border-bottom: 1px solid var(--border, #252A3A); font-weight: 700; font-size: 14px; color: var(--text-1, #E8EAF2); display: flex; align-items: center; gap: 8px; }
-    .admin-card-body { padding: 24px 20px; }
-
-    .form-group { margin-bottom: 20px; }
-    .form-group-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
-    .form-label { display: block; font-size: 12px; font-weight: 600; color: var(--text-2, #8B90A7); margin-bottom: 8px; }
-    .text-danger { color: var(--accent-3, #FF5C7A); }
-
-    .form-control, .form-select { width: 100%; background: var(--bg, #0C0E14); border: 1px solid var(--border, #252A3A); color: var(--text-1, #E8EAF2); padding: 10px 14px; border-radius: 8px; font-family: var(--sans, sans-serif); font-size: 14px; transition: border-color 0.2s; outline: none; }
-    .form-control:focus, .form-select:focus { border-color: var(--accent, #5B6EF5); }
-    .form-select option { background: var(--card, #1A1E2B); color: var(--text-1, #E8EAF2); }
-    textarea.form-control { resize: vertical; min-height: 80px; }
-
-    .switch-wrap { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; }
-    .switch-label { font-size: 13px; font-weight: 500; color: var(--text-1, #E8EAF2); }
-    .switch { position: relative; display: inline-block; width: 40px; height: 22px; }
-    .switch input { opacity: 0; width: 0; height: 0; }
-    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--border, #252A3A); transition: .3s; border-radius: 22px; }
-    .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: #fff; transition: .3s; border-radius: 50%; }
-    input:checked + .slider { background-color: var(--accent, #5B6EF5); }
-    input:checked + .slider:before { transform: translateX(18px); }
-
-    .btn-group-vertical { display: flex; flex-direction: column; gap: 12px; margin-top: 20px; }
-    .btn { width: 100%; padding: 12px; border-radius: 8px; font-family: var(--sans, sans-serif); font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; border: none; }
-    .btn-primary { background: var(--accent, #5B6EF5); color: #fff; }
-    .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
-    .btn-secondary { background: var(--bg, #0C0E14); color: var(--text-1, #E8EAF2); border: 1px solid var(--border, #252A3A); text-decoration: none; }
-    .btn-secondary:hover { border-color: var(--text-3, #555B72); color: #fff; }
-    .btn-warning-outline { background: rgba(245, 166, 35, 0.03); color: #F5A623; border: 1px dashed rgba(245, 166, 35, 0.2); font-size: 12px; padding: 8px; margin-top: 10px; }
-    .btn-warning-outline:hover { background: rgba(245, 166, 35, 0.1); }
-
-    @media(max-width: 991px){ .form-layout { grid-template-columns: 1fr; } }
-</style>
-
 @if ($errors->any())
-    <div style="background: rgba(255, 92, 122, 0.1); border: 1px solid var(--accent-3, #FF5C7A); color: #FF5C7A; padding: 14px 20px; border-radius: 8px; margin-bottom: 20px; font-size: 13px;">
-        @foreach ($errors->all() as $error)
-            <div><i class="fa-solid fa-triangle-exclamation"></i> {{ $error }}</div>
-        @endforeach
+    <div class="alert alert-danger">
+        <h5>
+            <i class="fas fa-exclamation-triangle"></i>
+            Please fix the following errors
+        </h5>
+
+        <ul class="mb-0">
+            @foreach ($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
     </div>
 @endif
 
 <form method="POST"
-      action="{{ isset($promotion) ? route('admin.promotions.update', $promotion) : route('admin.promotions.store') }}">
+      action="{{ isset($promotion)
+            ? route('admin.promotions.update', $promotion)
+            : route('admin.promotions.store') }}">
+
     @csrf
-    @if(isset($promotion)) @method('PUT') @endif
 
-    <div class="form-layout">
-        
-        {{-- ── LEFT PANEL: CALCULATION CONFIGS ── --}}
-        <div class="main-col">
-            <div class="admin-card">
-                <div class="admin-card-header">
-                    <i class="fa-solid fa-tags" style="color: var(--text-3);"></i> General Parameters
+    @if(isset($promotion))
+        @method('PUT')
+    @endif
+
+    <div class="row">
+
+        {{-- LEFT --}}
+        <div class="col-lg-8">
+
+            {{-- GENERAL --}}
+            <div class="card card-primary card-outline">
+
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-tags mr-2"></i>
+                        General Parameters
+                    </h3>
                 </div>
-                <div class="admin-card-body">
-                    
+
+                <div class="card-body">
+
+                    {{-- Name --}}
                     <div class="form-group">
-                        <label class="form-label">Campaign Public Title Name <span class="text-danger">*</span></label>
-                        <input type="text" name="name" value="{{ old('name', $promotion->name ?? '') }}" class="form-control" placeholder="e.g. Summer Launch Kickoff, Black Friday Deal" required>
+                        <label for="name">
+                            Campaign Public Title Name
+                            <span class="text-danger">*</span>
+                        </label>
+
+                        <input
+                            type="text"
+                            id="name"
+                            name="name"
+                            value="{{ old('name', $promotion->name ?? '') }}"
+                            class="form-control @error('name') is-invalid @enderror"
+                            placeholder="e.g. Summer Launch Kickoff, Black Friday Deal"
+                            required
+                        >
+
+                        @error('name')
+                            <span class="invalid-feedback">{{ $message }}</span>
+                        @enderror
                     </div>
 
-                    <div class="form-group-grid">
-                        <div>
-                            <label class="form-label">Coupon String Code</label>
-                            <input type="text" name="code" value="{{ old('code', $promotion->code ?? '') }}" class="form-control" placeholder="e.g. SUMMER50, FREESHIP" style="font-family: var(--mono); text-transform: uppercase;">
+                    {{-- Code + Type --}}
+                    <div class="row">
+
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="code">Coupon Code</label>
+
+                                <input
+                                    type="text"
+                                    id="code"
+                                    name="code"
+                                    value="{{ old('code', $promotion->code ?? '') }}"
+                                    class="form-control text-uppercase"
+                                    placeholder="e.g. SUMMER50"
+                                >
+                            </div>
                         </div>
-                        <div>
-                            <label class="form-label">Discount Computation Type <span class="text-danger">*</span></label>
-                            <select name="type" class="form-select" required>
-                                <option value="percentage" @selected(old('type', $promotion->type ?? 'percentage') === 'percentage')>Percentage (%)</option>
-                                <option value="fixed" @selected(old('type', $promotion->type ?? '') === 'fixed')>Fixed Amount ($)</option>
-                            </select>
+
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="type">
+                                    Discount Type
+                                    <span class="text-danger">*</span>
+                                </label>
+
+                                <select
+                                    id="type"
+                                    name="type"
+                                    class="form-control"
+                                    required
+                                >
+                                    <option value="percentage"
+                                        @selected(old('type', $promotion->type ?? 'percentage') === 'percentage')>
+                                        Percentage (%)
+                                    </option>
+
+                                    <option value="fixed"
+                                        @selected(old('type', $promotion->type ?? '') === 'fixed')>
+                                        Fixed Amount ($)
+                                    </option>
+                                </select>
+                            </div>
                         </div>
+
                     </div>
 
-                    <div class="form-group-grid">
-                        <div>
-                            <label class="form-label">Discount Numeric Face Value <span class="text-danger">*</span></label>
-                            <input type="number" step="0.01" name="value" value="{{ old('value', $promotion->value ?? '') }}" class="form-control" style="font-family: var(--mono);" placeholder="e.g. 10 or 15.50" required>
+                    {{-- Value + Usage --}}
+                    <div class="row">
+
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="value">
+                                    Discount Value
+                                    <span class="text-danger">*</span>
+                                </label>
+
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    id="value"
+                                    name="value"
+                                    value="{{ old('value', $promotion->value ?? '') }}"
+                                    class="form-control"
+                                    placeholder="e.g. 10 or 15.50"
+                                    required
+                                >
+                            </div>
                         </div>
-                        <div>
-                            <label class="form-label">Usage Structural Limit Capacity</label>
-                            <input type="number" name="usage_limit" value="{{ old('usage_limit', $promotion->usage_limit ?? '') }}" class="form-control" style="font-family: var(--mono);" placeholder="Leave empty for unconstrained" min="1">
+
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="usage_limit">
+                                    Usage Limit
+                                </label>
+
+                                <input
+                                    type="number"
+                                    min="1"
+                                    id="usage_limit"
+                                    name="usage_limit"
+                                    value="{{ old('usage_limit', $promotion->usage_limit ?? '') }}"
+                                    class="form-control"
+                                    placeholder="Leave empty for unlimited"
+                                >
+                            </div>
                         </div>
+
                     </div>
 
-                    <div class="form-group" style="margin-bottom: 0;">
-                        <label class="form-label">Description Summary Summary</label>
-                        <textarea name="description" class="form-control" placeholder="Describe the application rules context details...">{{ old('description', $promotion->description ?? '') }}</textarea>
+                    {{-- Description --}}
+                    <div class="form-group mb-0">
+                        <label for="description">Description</label>
+
+                        <textarea
+                            id="description"
+                            name="description"
+                            rows="4"
+                            class="form-control"
+                            placeholder="Describe the promotion..."
+                        >{{ old('description', $promotion->description ?? '') }}</textarea>
                     </div>
 
                 </div>
             </div>
 
-            <div class="admin-card">
-                <div class="admin-card-header">
-                    <i class="fa-solid fa-sliders" style="color: var(--text-3);"></i> Threshold Constraints Matrix
+
+            {{-- THRESHOLDS --}}
+            <div class="card card-primary card-outline">
+
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-sliders-h mr-2"></i>
+                        Discount Constraints
+                    </h3>
                 </div>
-                <div class="admin-card-body">
-                    <div class="form-group-grid" style="margin-bottom: 0;">
-                        <div>
-                            <label class="form-label">Minimum Order Requirement ($)</label>
-                            <input type="number" step="0.01" name="min_order_amount" value="{{ old('min_order_amount', $promotion->min_order_amount ?? '') }}" class="form-control" style="font-family: var(--mono);" placeholder="0.00">
+
+                <div class="card-body">
+
+                    <div class="row">
+
+                        <div class="col-md-6">
+                            <div class="form-group mb-md-0">
+                                <label for="min_order_amount">
+                                    Minimum Order Amount ($)
+                                </label>
+
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    id="min_order_amount"
+                                    name="min_order_amount"
+                                    value="{{ old('min_order_amount', $promotion->min_order_amount ?? '') }}"
+                                    class="form-control"
+                                    placeholder="0.00"
+                                >
+                            </div>
                         </div>
-                        <div>
-                            <label class="form-label">Maximum Ceiling Discount Cap ($)</label>
-                            <input type="number" step="0.01" name="max_discount_amount" value="{{ old('max_discount_amount', $promotion->max_discount_amount ?? '') }}" class="form-control" style="font-family: var(--mono);" placeholder="No upper roof boundary">
+
+                        <div class="col-md-6">
+                            <div class="form-group mb-0">
+                                <label for="max_discount_amount">
+                                    Maximum Discount ($)
+                                </label>
+
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    id="max_discount_amount"
+                                    name="max_discount_amount"
+                                    value="{{ old('max_discount_amount', $promotion->max_discount_amount ?? '') }}"
+                                    class="form-control"
+                                    placeholder="No maximum"
+                                >
+                            </div>
                         </div>
+
                     </div>
+
                 </div>
             </div>
+
         </div>
 
-        {{-- ── RIGHT PANEL: PUBLISH CONTROLS ── --}}
-        <div class="side-col">
-            
-            <div class="admin-card">
-                <div class="admin-card-header">
-                    <i class="fa-solid fa-rocket" style="color: var(--accent-4);"></i> Control Parameters
+
+        {{-- RIGHT --}}
+        <div class="col-lg-4">
+
+            {{-- CONTROL --}}
+            <div class="card card-primary card-outline">
+
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-rocket mr-2"></i>
+                        Control Parameters
+                    </h3>
                 </div>
-                <div class="admin-card-body">
-                    
-                    <div class="switch-wrap">
-                        <span class="switch-label">Promotion Active</span>
-                        <label class="switch">
-                            <input type="hidden" name="is_active" value="0">
-                            <input type="checkbox" name="is_active" value="1" {{ old('is_active', ($promotion->is_active ?? true)) ? 'checked' : '' }}>
-                            <span class="slider"></span>
-                        </label>
+
+                <div class="card-body">
+
+                    <div class="form-group">
+
+                        <div class="custom-control custom-switch">
+
+                            <input
+                                type="hidden"
+                                name="is_active"
+                                value="0"
+                            >
+
+                            <input
+                                type="checkbox"
+                                class="custom-control-input"
+                                id="is_active"
+                                name="is_active"
+                                value="1"
+                                {{ old(
+                                    'is_active',
+                                    $promotion->is_active ?? true
+                                ) ? 'checked' : '' }}
+                            >
+
+                            <label
+                                class="custom-control-label"
+                                for="is_active"
+                            >
+                                Promotion Active
+                            </label>
+
+                        </div>
+
                     </div>
+
 
                     @if(isset($promotion))
-                        <div style="font-size: 13px; color: var(--text-3); margin-top: 14px; border-top: 1px solid var(--border); padding-top: 14px;">
-                            Current Usage: <strong style="color: var(--text-1); font-family: var(--mono);">{{ $promotion->usage_count ?? 0 }}</strong> units checked out.
+
+                        <div class="alert alert-light border">
+                            <small class="text-muted">
+                                Current Usage
+                            </small>
+
+                            <h4 class="mb-0">
+                                {{ $promotion->usage_count ?? 0 }}
+                            </h4>
                         </div>
+
                     @endif
 
-                    <div class="btn-group-vertical">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fa-solid fa-floppy-disk"></i> {{ isset($promotion) ? 'Update Strategy' : 'Publish Strategy' }}
-                        </button>
-                        <a href="{{ route('admin.promotions.index') }}" class="btn btn-secondary">Cancel</a>
-                    </div>
+
+                    <button
+                        type="submit"
+                        class="btn btn-primary btn-block"
+                    >
+                        <i class="fas fa-save mr-1"></i>
+
+                        {{ isset($promotion)
+                            ? 'Update Promotion'
+                            : 'Create Promotion' }}
+                    </button>
+
+                    <a
+                        href="{{ route('admin.promotions.index') }}"
+                        class="btn btn-default btn-block"
+                    >
+                        Cancel
+                    </a>
+
                 </div>
             </div>
 
-            <div class="admin-card">
-                <div class="admin-card-header">
-                    <i class="fa-solid fa-calendar-days" style="color: var(--text-3);"></i> Chronology Validity
+
+            {{-- DATES --}}
+            <div class="card card-primary card-outline">
+
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-calendar-alt mr-2"></i>
+                        Promotion Validity
+                    </h3>
                 </div>
-                <div class="admin-card-body">
+
+                <div class="card-body">
+
                     <div class="form-group">
-                        <label class="form-label">Activation Windows From Date</label>
-                        <input type="date" name="starts_at" value="{{ old('starts_at', isset($promotion->starts_at) ? \Carbon\Carbon::parse($promotion->starts_at)->format('Y-m-d') : '') }}" class="form-control">
+                        <label for="starts_at">
+                            Start Date
+                        </label>
+
+                        <input
+                            type="date"
+                            id="starts_at"
+                            name="starts_at"
+                            value="{{ old(
+                                'starts_at',
+                                isset($promotion->starts_at)
+                                    ? \Carbon\Carbon::parse($promotion->starts_at)->format('Y-m-d')
+                                    : ''
+                            ) }}"
+                            class="form-control"
+                        >
                     </div>
-                    <div class="form-group" style="margin-bottom: 0;">
-                        <label class="form-label">Expiration Deadline Date</label>
-                        <input type="date" name="expires_at" value="{{ old('expires_at', isset($promotion->expires_at) ? \Carbon\Carbon::parse($promotion->expires_at)->format('Y-m-d') : '') }}" class="form-control">
+
+                    <div class="form-group mb-0">
+                        <label for="expires_at">
+                            Expiration Date
+                        </label>
+
+                        <input
+                            type="date"
+                            id="expires_at"
+                            name="expires_at"
+                            value="{{ old(
+                                'expires_at',
+                                isset($promotion->expires_at)
+                                    ? \Carbon\Carbon::parse($promotion->expires_at)->format('Y-m-d')
+                                    : ''
+                            ) }}"
+                            class="form-control"
+                        >
                     </div>
+
                 </div>
             </div>
 
+
+            {{-- RESET USAGE --}}
             @if(isset($promotion) && ($promotion->usage_count ?? 0) > 0)
-                <div class="admin-card" style="border-color: rgba(245, 166, 35, 0.15);">
-                    <div class="admin-card-header" style="color: #F5A623;"><i class="fa-solid fa-arrows-rotate"></i> Ledger Counter Tool</div>
-                    <div class="admin-card-body" style="padding-top: 0; padding-bottom: 16px;">
-                        <a href="{{ route('admin.promotions.resetUsage', $promotion) }}" class="btn btn-warning-outline" onclick="event.preventDefault(); if(confirm('Reset current utilization logs counters back to 0 completely?')) { document.getElementById('reset-usage-form').submit(); }">
-                            Reset Total Performance Counters
-                        </a>
+
+                <div class="card card-warning card-outline">
+
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-sync-alt mr-2"></i>
+                            Usage Counter
+                        </h3>
+                    </div>
+
+                    <div class="card-body">
+
+                        <p class="text-muted">
+                            Reset the current promotion usage counter.
+                        </p>
+
+                        <button
+                            type="button"
+                            class="btn btn-warning btn-block"
+                            onclick="
+                                if(confirm('Reset usage counter to 0?')) {
+                                    document.getElementById('reset-usage-form').submit();
+                                }
+                            "
+                        >
+                            <i class="fas fa-redo mr-1"></i>
+                            Reset Usage Counter
+                        </button>
+
                     </div>
                 </div>
+
             @endif
 
         </div>
+
     </div>
+
 </form>
 
+
 @if(isset($promotion))
-    <form id="reset-usage-form" action="{{ route('admin.promotions.resetUsage', $promotion) }}" method="POST" style="display:none;">@csrf @method('PATCH')</form>
+
+    <form
+        id="reset-usage-form"
+        action="{{ route('admin.promotions.resetUsage', $promotion) }}"
+        method="POST"
+        style="display:none;"
+    >
+        @csrf
+        @method('PATCH')
+    </form>
+
 @endif
 
 @endsection

@@ -1,262 +1,592 @@
 @extends('layouts.webmaster')
 
 @section('title', 'Dashboard')
-@section('breadcrumb', 'Overview')
+@section('page-title', 'Dashboard')
 
 @section('content')
 
-{{--
-    Expected variables from the controller (all optional — sensible fallbacks are used below):
-    $totalRevenue, $revenueDelta        // float, float (percent, signed)
-    $totalOrders, $ordersDelta
-    $newCustomers, $customersDelta
-    $lowStockCount, $lowStockDelta
-    $chartData   // collection of ['label' => 'Jan', 'revenue' => 4200, 'orders' => 38]
-    $recentOrders // collection of order models: id, customer_name, total, status
-    $topProducts  // collection of product models: name, category, price, stock, stock_max
-    $activity     // collection of ['color' => '#5B6EF5', 'text' => '...', 'time' => '2m ago']
---}}
+<div class="container-fluid">
 
-@php
-    $totalRevenue    = $totalRevenue    ?? 48230;
-    $revenueDelta    = $revenueDelta    ?? 12.4;
-    $totalOrders     = $totalOrders     ?? 312;
-    $ordersDelta     = $ordersDelta     ?? 8.1;
-    $newCustomers    = $newCustomers    ?? 54;
-    $customersDelta  = $customersDelta  ?? -3.2;
-    $lowStockCount   = $lowStockCount   ?? 7;
-    $lowStockDelta   = $lowStockDelta   ?? 2;
+    {{-- =========================
+        STAT CARDS (AdminLTE small-box)
+    ========================== --}}
+    <div class="row">
 
-    $chartData = $chartData ?? collect([
-        ['label' => 'Jan', 'revenue' => 32, 'orders' => 20],
-        ['label' => 'Feb', 'revenue' => 45, 'orders' => 28],
-        ['label' => 'Mar', 'revenue' => 38, 'orders' => 24],
-        ['label' => 'Apr', 'revenue' => 55, 'orders' => 34],
-        ['label' => 'May', 'revenue' => 62, 'orders' => 40],
-        ['label' => 'Jun', 'revenue' => 48, 'orders' => 30],
-        ['label' => 'Jul', 'revenue' => 70, 'orders' => 46],
-        ['label' => 'Aug', 'revenue' => 66, 'orders' => 42],
-        ['label' => 'Sep', 'revenue' => 78, 'orders' => 50],
-        ['label' => 'Oct', 'revenue' => 84, 'orders' => 55],
-        ['label' => 'Nov', 'revenue' => 90, 'orders' => 60],
-        ['label' => 'Dec', 'revenue' => 100, 'orders' => 66],
-    ]);
-    $chartMax = collect($chartData)->max('revenue') ?: 1;
-
-    $recentOrders = $recentOrders ?? collect([
-        (object)['id' => 'ORD-1042', 'customer_name' => 'Liam Carter', 'total' => 899.00, 'status' => 'paid'],
-        (object)['id' => 'ORD-1041', 'customer_name' => 'Sofia Reyes', 'total' => 249.00, 'status' => 'pending'],
-        (object)['id' => 'ORD-1040', 'customer_name' => 'Noah Kim', 'total' => 1299.00, 'status' => 'shipped'],
-        (object)['id' => 'ORD-1039', 'customer_name' => 'Ava Chen', 'total' => 599.00, 'status' => 'cancelled'],
-        (object)['id' => 'ORD-1038', 'customer_name' => 'Ethan Brooks', 'total' => 349.00, 'status' => 'paid'],
-    ]);
-
-    $topProducts = $topProducts ?? collect([
-        (object)['name' => 'iPhone 16 Pro', 'category' => 'Smartphones', 'price' => 999.00, 'stock' => 42, 'stock_max' => 50],
-        (object)['name' => 'Galaxy S25', 'category' => 'Smartphones', 'price' => 899.00, 'stock' => 18, 'stock_max' => 50],
-        (object)['name' => 'Pixel 9', 'category' => 'Smartphones', 'price' => 699.00, 'stock' => 6, 'stock_max' => 50],
-        (object)['name' => 'AirPods Pro', 'category' => 'Accessories', 'price' => 249.00, 'stock' => 35, 'stock_max' => 50],
-    ]);
-
-    $activity = $activity ?? collect([
-        ['color' => '#5B6EF5', 'text' => '<strong>Liam Carter</strong> placed a new order for $899.00', 'time' => '2m ago'],
-        ['color' => '#00D4AA', 'text' => '<strong>Payment</strong> confirmed for order ORD-1041', 'time' => '18m ago'],
-        ['color' => '#F5A623', 'text' => '<strong>Pixel 9</strong> stock fell below reorder threshold', 'time' => '1h ago'],
-        ['color' => '#FF5C7A', 'text' => '<strong>Order ORD-1039</strong> was cancelled by customer', 'time' => '3h ago'],
-        ['color' => '#5B6EF5', 'text' => '<strong>Sofia Reyes</strong> left a 5-star review', 'time' => '5h ago'],
-    ]);
-
-    $statusClasses = [
-        'paid' => 'status-paid',
-        'pending' => 'status-pending',
-        'shipped' => 'status-shipped',
-        'cancelled' => 'status-cancelled',
-    ];
-
-    $stockClass = function ($stock, $max) {
-        $pct = $max > 0 ? $stock / $max : 0;
-        if ($pct <= 0.2) return 'fill-low';
-        if ($pct <= 0.5) return 'fill-mid';
-        return 'fill-good';
-    };
-@endphp
-
-{{-- ── STATS GRID ── --}}
-<div class="stats-grid">
-    <div class="stat-card c1">
-        <div class="stat-label">Total Revenue</div>
-        <div class="stat-value">${{ number_format($totalRevenue) }}</div>
-        <div class="stat-delta {{ $revenueDelta >= 0 ? 'delta-up' : 'delta-down' }}">
-            <i class="fa-solid fa-arrow-{{ $revenueDelta >= 0 ? 'up' : 'down' }}"></i>
-            {{ abs($revenueDelta) }}% vs last month
-        </div>
-        <i class="fa-solid fa-sack-dollar stat-icon"></i>
-    </div>
-
-    <div class="stat-card c2">
-        <div class="stat-label">Total Orders</div>
-        <div class="stat-value">{{ number_format($totalOrders) }}</div>
-        <div class="stat-delta {{ $ordersDelta >= 0 ? 'delta-up' : 'delta-down' }}">
-            <i class="fa-solid fa-arrow-{{ $ordersDelta >= 0 ? 'up' : 'down' }}"></i>
-            {{ abs($ordersDelta) }}% vs last month
-        </div>
-        <i class="fa-solid fa-cart-shopping stat-icon"></i>
-    </div>
-
-    <div class="stat-card c3">
-        <div class="stat-label">New Customers</div>
-        <div class="stat-value">{{ number_format($newCustomers) }}</div>
-        <div class="stat-delta {{ $customersDelta >= 0 ? 'delta-up' : 'delta-down' }}">
-            <i class="fa-solid fa-arrow-{{ $customersDelta >= 0 ? 'up' : 'down' }}"></i>
-            {{ abs($customersDelta) }}% vs last month
-        </div>
-        <i class="fa-solid fa-users stat-icon"></i>
-    </div>
-
-    <div class="stat-card c4">
-        <div class="stat-label">Low Stock Alerts</div>
-        <div class="stat-value">{{ $lowStockCount }}</div>
-        <div class="stat-delta {{ $lowStockDelta <= 0 ? 'delta-up' : 'delta-down' }}">
-            <i class="fa-solid fa-arrow-{{ $lowStockDelta <= 0 ? 'down' : 'up' }}"></i>
-            {{ abs($lowStockDelta) }} vs last week
-        </div>
-        <i class="fa-solid fa-triangle-exclamation stat-icon"></i>
-    </div>
-</div>
-
-{{-- ── CHART + RECENT ORDERS ── --}}
-<div class="mid-row">
-
-    <div class="card">
-        <div class="card-header">
-            <div>
-                <div class="card-title">Revenue Overview</div>
-                <div class="card-sub">Monthly revenue vs orders</div>
-            </div>
-            <button class="btn-ghost">This Year <i class="fa-solid fa-chevron-down" style="font-size:10px; margin-left:4px;"></i></button>
-        </div>
-        <div class="chart-area">
-            <div class="chart-bars">
-                @foreach($chartData as $point)
-                    <div class="bar-group">
-                        <div class="bar revenue" style="height: {{ max(4, ($point['revenue'] / $chartMax) * 100) }}%;" title="Revenue: {{ $point['revenue'] }}"></div>
-                        <div class="bar orders" style="height: {{ max(4, ($point['orders'] / $chartMax) * 100) }}%;" title="Orders: {{ $point['orders'] }}"></div>
-                    </div>
-                @endforeach
-            </div>
-            <div class="chart-bars" style="height:auto; margin-bottom:0;">
-                @foreach($chartData as $point)
-                    <div class="bar-group" style="height:auto;">
-                        <div class="bar-label">{{ $point['label'] }}</div>
-                    </div>
-                @endforeach
-            </div>
-            <div class="chart-legend" style="margin-top:16px;">
-                <div class="legend-item"><span class="legend-dot" style="background: var(--accent);"></span> Revenue</div>
-                <div class="legend-item"><span class="legend-dot" style="background: rgba(91,110,245,0.3);"></span> Orders</div>
-            </div>
-        </div>
-    </div>
-
-    <div class="card">
-        <div class="card-header">
-            <div>
-                <div class="card-title">Recent Orders</div>
-                <div class="card-sub">Last {{ $recentOrders->count() }} orders placed</div>
-            </div>
-            <a href="{{ route('webmaster.orders.index') }}" class="btn-ghost">View all</a>
-        </div>
-        <div class="orders-list">
-            @forelse($recentOrders as $order)
-                <div class="order-row">
-                    <div class="order-thumb"><i class="fa-solid fa-box"></i></div>
-                    <div>
-                        <div class="order-name">{{ $order->customer_name }}</div>
-                        <div class="order-id">{{ $order->id }}</div>
-                    </div>
-                    <div class="order-price">${{ number_format($order->total, 2) }}</div>
-                    <span class="status-badge {{ $statusClasses[$order->status] ?? 'status-pending' }}" style="margin-left:8px;">
-                        {{ strtoupper($order->status) }}
-                    </span>
+        {{-- Revenue --}}
+        <div class="col-lg-3 col-6">
+            <div class="small-box bg-primary">
+                <div class="inner">
+                    <h3>
+                        ${{ number_format($stats['total_revenue'], 2) }}
+                    </h3>
+                    <p>Total Revenue</p>
+                    <small>
+                        <i class="fas fa-arrow-{{ $revenueDelta >= 0 ? 'up' : 'down' }}"></i>
+                        {{ abs($revenueDelta) }}% vs last month
+                    </small>
                 </div>
-            @empty
-                <div class="order-row"><span style="color: var(--text-3);">No recent orders.</span></div>
-            @endforelse
+                <div class="icon">
+                    <i class="fas fa-sack-dollar"></i>
+                </div>
+                <a href="{{ route('webmaster.orders.index') }}" class="small-box-footer">
+                    View Orders <i class="fas fa-arrow-circle-right"></i>
+                </a>
+            </div>
+        </div>
+
+        {{-- Orders --}}
+        <div class="col-lg-3 col-6">
+            <div class="small-box bg-warning">
+                <div class="inner">
+                    <h3>
+                        {{ number_format($stats['total_orders']) }}
+                    </h3>
+                    <p>Orders</p>
+                    <small>
+                        {{ $stats['pending_orders'] }} pending
+                    </small>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-cart-shopping"></i>
+                </div>
+                <a href="{{ route('webmaster.orders.index') }}" class="small-box-footer">
+                    View Orders <i class="fas fa-arrow-circle-right"></i>
+                </a>
+            </div>
+        </div>
+
+        {{-- Products --}}
+        <div class="col-lg-3 col-6">
+            <div class="small-box bg-success">
+                <div class="inner">
+                    <h3>
+                        {{ number_format($stats['total_products']) }}
+                    </h3>
+                    <p>Active Products</p>
+                    <small>
+                        {{ $lowStockCount }} low in stock
+                    </small>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-mobile-screen"></i>
+                </div>
+                <a href="{{ route('webmaster.products.index') }}" class="small-box-footer">
+                    Manage Products <i class="fas fa-arrow-circle-right"></i>
+                </a>
+            </div>
+        </div>
+
+        {{-- Customers --}}
+        <div class="col-lg-3 col-6">
+            <div class="small-box bg-info">
+                <div class="inner">
+                    <h3>
+                        {{ number_format($stats['total_users']) }}
+                    </h3>
+                    <p>Customers</p>
+                    <small>
+                        Registered accounts
+                    </small>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <a href="{{ route('webmaster.contacts.index') }}" class="small-box-footer">
+                    Customer Inquiries <i class="fas fa-arrow-circle-right"></i>
+                </a>
+            </div>
+        </div>
+
+    </div>
+
+    {{-- =========================
+        ORDER STATUS QUICK PILLS
+    ========================== --}}
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="card card-outline card-secondary mb-0">
+                <div class="card-body py-2 px-3">
+                    <div class="d-flex flex-wrap align-items-center justify-content-between">
+                        <span class="text-muted mr-2 font-weight-bold" style="font-size: 13px;">
+                            <i class="fas fa-filter mr-1"></i> Order Status:
+                        </span>
+                        <div class="d-flex flex-wrap" style="gap: 8px;">
+                            <a href="{{ route('webmaster.orders.index', ['status' => 'pending']) }}" class="badge badge-warning px-2 py-1" style="font-size: 12px;">
+                                Pending: <strong>{{ $orderStatusCounts['pending'] ?? 0 }}</strong>
+                            </a>
+                            <a href="{{ route('webmaster.orders.index', ['status' => 'confirmed']) }}" class="badge badge-primary px-2 py-1" style="font-size: 12px;">
+                                Confirmed: <strong>{{ $orderStatusCounts['confirmed'] ?? 0 }}</strong>
+                            </a>
+                            <a href="{{ route('webmaster.orders.index', ['status' => 'processing']) }}" class="badge badge-info px-2 py-1" style="font-size: 12px;">
+                                Processing: <strong>{{ $orderStatusCounts['processing'] ?? 0 }}</strong>
+                            </a>
+                            <a href="{{ route('webmaster.orders.index', ['status' => 'shipped']) }}" class="badge badge-secondary px-2 py-1" style="font-size: 12px;">
+                                Shipped: <strong>{{ $orderStatusCounts['shipped'] ?? 0 }}</strong>
+                            </a>
+                            <a href="{{ route('webmaster.orders.index', ['status' => 'delivered']) }}" class="badge badge-success px-2 py-1" style="font-size: 12px;">
+                                Delivered: <strong>{{ $orderStatusCounts['delivered'] ?? 0 }}</strong>
+                            </a>
+                            <a href="{{ route('webmaster.orders.index', ['status' => 'cancelled']) }}" class="badge badge-danger px-2 py-1" style="font-size: 12px;">
+                                Cancelled: <strong>{{ $orderStatusCounts['cancelled'] ?? 0 }}</strong>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
-</div>
+    {{-- =========================
+        REVENUE CHART + TOP PRODUCTS
+    ========================== --}}
+    <div class="row">
 
-{{-- ── PRODUCTS TABLE + ACTIVITY FEED ── --}}
-<div class="bottom-row">
+        {{-- Monthly Revenue & Orders --}}
+        <div class="col-lg-8">
+            <div class="card card-outline card-primary">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-chart-column mr-2"></i>
+                        Monthly Revenue & Orders
+                    </h3>
 
-    <div class="card">
-        <div class="card-header">
-            <div>
-                <div class="card-title">Top Products</div>
-                <div class="card-sub">Stock levels at a glance</div>
+                    <div class="card-tools d-flex align-items-center">
+                        <form method="GET" action="{{ route('webmaster.dashboard') }}" class="mr-2" style="margin: 0;">
+                            <select name="year" onchange="this.form.submit()" class="form-control form-control-sm" style="width: 120px;">
+                                @foreach($availableYears as $yr)
+                                    <option value="{{ $yr }}" @selected($yr == $selectedYear)>Year {{ $yr }}</option>
+                                @endforeach
+                            </select>
+                        </form>
+                        <span class="badge badge-primary">
+                            Total: ${{ number_format($yearTotalRevenue, 2) }}
+                        </span>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <div style="height: 320px;">
+                        <canvas id="revenueChart"></canvas>
+                    </div>
+                </div>
             </div>
-            <a href="{{ route('webmaster.products.index') }}" class="btn-ghost">Manage</a>
         </div>
-        <div class="table-wrap">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Product</th>
-                        <th>Price</th>
-                        <th>Stock</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($topProducts as $product)
-                        <tr>
-                            <td>
-                                <div class="prod-name">
-                                    <div class="prod-icon"><i class="fa-solid fa-mobile-screen"></i></div>
-                                    <div>
-                                        {{ $product->name }}
-                                        <div style="font-size:11px; color: var(--text-3); font-weight:400;">{{ $product->category }}</div>
+
+        {{-- Top Products --}}
+        <div class="col-lg-4">
+            <div class="card card-outline card-success">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-ranking-star mr-2"></i>
+                        Top Selling Products
+                    </h3>
+                    <div class="card-tools">
+                        <a href="{{ route('webmaster.products.index') }}" class="btn btn-tool" title="View Catalogue">
+                            <i class="fas fa-arrow-right"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        @forelse($topProducts as $i => $product)
+                            <div class="list-group-item d-flex align-items-center justify-content-between py-2">
+                                <div class="d-flex align-items-center" style="min-width: 0;">
+                                    <div class="mr-3">
+                                        <span class="badge {{ $i == 0 ? 'badge-warning' : ($i == 1 ? 'badge-secondary' : ($i == 2 ? 'badge-info' : 'badge-light')) }} font-weight-bold" style="width: 24px; text-align: center;">
+                                            {{ $i + 1 }}
+                                        </span>
+                                    </div>
+
+                                    @if($product->image_url)
+                                        <img src="{{ $product->image_url }}" alt="{{ $product->name }}" class="img-size-50 mr-3 rounded" style="object-fit: cover; width: 40px; height: 40px;">
+                                    @else
+                                        <div class="img-size-50 mr-3 rounded bg-light d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                            <i class="fas fa-mobile-screen text-muted"></i>
+                                        </div>
+                                    @endif
+
+                                    <div style="min-width: 0;">
+                                        <a href="{{ route('webmaster.products.edit', $product->id) }}" class="font-weight-bold text-dark d-block text-truncate" style="max-width: 170px;">
+                                            {{ $product->name }}
+                                        </a>
+                                        <small class="text-muted">
+                                            {{ $product->total_sold }} sold • ${{ number_format($product->price, 2) }}
+                                        </small>
                                     </div>
                                 </div>
-                            </td>
-                            <td>${{ number_format($product->price, 2) }}</td>
-                            <td>
-                                <div class="stock-bar-wrap">
-                                    <div class="stock-bar">
-                                        <div class="stock-fill {{ $stockClass($product->stock, $product->stock_max) }}" style="width: {{ $product->stock_max > 0 ? min(100, ($product->stock / $product->stock_max) * 100) : 0 }}%;"></div>
-                                    </div>
-                                    <span class="stock-num">{{ $product->stock }}</span>
-                                </div>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr><td colspan="3" style="color: var(--text-3);">No products yet.</td></tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-    </div>
 
-    <div class="card">
-        <div class="card-header">
-            <div>
-                <div class="card-title">Recent Activity</div>
-                <div class="card-sub">Live feed across the store</div>
+                                <div class="text-right ml-2 flex-shrink-0">
+                                    <span class="badge {{ $product->stock <= 5 ? 'badge-danger' : ($product->stock <= 15 ? 'badge-warning' : 'badge-success') }}">
+                                        {{ $product->stock }} in stock
+                                    </span>
+                                </div>
+                            </div>
+                        @empty
+                            <div class="p-4 text-center text-muted">
+                                <i class="fas fa-box-open fa-2x mb-2"></i>
+                                <p class="mb-0">No sales data yet.</p>
+                            </div>
+                        @endforelse
+                    </div>
+                </div>
             </div>
         </div>
-        <div class="activity-list">
-            @forelse($activity as $item)
-                <div class="activity-item">
-                    <span class="act-dot" style="background: {{ $item['color'] }};"></span>
-                    <div class="act-text">{!! $item['text'] !!}</div>
-                    <span class="act-time">{{ $item['time'] }}</span>
+
+    </div>
+
+    {{-- =========================
+        RECENT ORDERS + QUICK ACTIONS
+    ========================== --}}
+    <div class="row">
+
+        {{-- Recent Orders --}}
+        <div class="col-lg-8">
+            <div class="card card-outline card-info">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-cart-shopping mr-2"></i>
+                        Recent Orders
+                    </h3>
+
+                    <div class="card-tools">
+                        <a href="{{ route('webmaster.orders.index') }}" class="btn btn-sm btn-primary">
+                            View All Orders
+                        </a>
+                    </div>
                 </div>
-            @empty
-                <div class="activity-item"><span style="color: var(--text-3);">No recent activity.</span></div>
-            @endforelse
+
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-striped mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Order</th>
+                                    <th>Customer</th>
+                                    <th>Status</th>
+                                    <th class="text-right">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse($recentOrders as $order)
+                                    @php
+                                        $statusBadge = match($order->status) {
+                                            'pending' => 'badge-warning',
+                                            'confirmed', 'processing' => 'badge-info',
+                                            'shipped' => 'badge-secondary',
+                                            'delivered' => 'badge-success',
+                                            'cancelled' => 'badge-danger',
+                                            default => 'badge-secondary',
+                                        };
+                                    @endphp
+                                    <tr>
+                                        <td>
+                                            <a href="{{ route('webmaster.orders.show', $order->id) }}" class="font-weight-bold text-primary">
+                                                #{{ $order->formatted_id }}
+                                            </a>
+                                            <br>
+                                            <small class="text-muted">{{ $order->created_at }}</small>
+                                        </td>
+                                        <td>
+                                            <div class="font-weight-600">{{ $order->customer_name }}</div>
+                                            @if($order->customer_email)
+                                                <small class="text-muted">{{ $order->customer_email }}</small>
+                                            @endif
+                                        </td>
+                                        <td>
+                                            <span class="badge {{ $statusBadge }}">
+                                                {{ ucfirst($order->status) }}
+                                            </span>
+                                        </td>
+                                        <td class="text-right font-weight-bold">
+                                            ${{ number_format($order->total, 2) }}
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="4" class="text-center text-muted py-4">
+                                            <i class="fas fa-cart-shopping fa-2x mb-2"></i>
+                                            <br>
+                                            No orders yet.
+                                        </td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </div>
+
+        {{-- Quick Actions --}}
+        <div class="col-lg-4">
+            <div class="card card-outline card-secondary">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-bolt mr-2 text-warning"></i>
+                        Quick Actions
+                    </h3>
+                </div>
+
+                <div class="card-body">
+                    {{-- Add Product --}}
+                    <a href="{{ route('webmaster.products.create') }}" class="btn btn-primary btn-block mb-3 text-left">
+                        <i class="fas fa-plus mr-2"></i> Add New Product
+                    </a>
+
+                    {{-- Pending Orders --}}
+                    <a href="{{ route('webmaster.orders.index', ['status' => 'pending']) }}" class="btn btn-warning btn-block mb-3 text-left">
+                        <i class="fas fa-cart-shopping mr-2"></i> Pending Orders
+                        @if(($orderStatusCounts['pending'] ?? 0) > 0)
+                            <span class="badge badge-dark float-right">
+                                {{ $orderStatusCounts['pending'] }}
+                            </span>
+                        @endif
+                    </a>
+
+                    {{-- Stock Inventory --}}
+                    <a href="{{ route('webmaster.stock.index', ['stock_status' => 'low']) }}" class="btn btn-danger btn-block mb-3 text-left">
+                        <i class="fas fa-boxes mr-2"></i> Low Stock Alerts
+                        @if($lowStockCount > 0)
+                            <span class="badge badge-light text-danger float-right font-weight-bold">
+                                {{ $lowStockCount }}
+                            </span>
+                        @endif
+                    </a>
+
+                    {{-- Pending Reviews --}}
+                    <a href="{{ route('webmaster.reviews.index') }}" class="btn btn-success btn-block mb-3 text-left">
+                        <i class="fas fa-star mr-2"></i> Pending Reviews
+                        @if($stats['pending_reviews'] > 0)
+                            <span class="badge badge-dark float-right">
+                                {{ $stats['pending_reviews'] }}
+                            </span>
+                        @endif
+                    </a>
+
+                    {{-- Unread Inquiries --}}
+                    <a href="{{ route('webmaster.contacts.index') }}" class="btn btn-info btn-block text-left">
+                        <i class="fas fa-envelope mr-2"></i> Customer Messages
+                        @if($stats['unread_contacts'] > 0)
+                            <span class="badge badge-dark float-right">
+                                {{ $stats['unread_contacts'] }}
+                            </span>
+                        @endif
+                    </a>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    {{-- =========================
+        CRITICAL STOCK + ACTIVITY FEED
+    ========================== --}}
+    <div class="row">
+
+        {{-- Critical Low Stock Table --}}
+        <div class="col-lg-6">
+            <div class="card card-outline card-danger">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-triangle-exclamation mr-2 text-danger"></i>
+                        Critical Inventory Watchlist
+                    </h3>
+                    <div class="card-tools">
+                        <a href="{{ route('webmaster.stock.index') }}" class="btn btn-tool" title="View Full Inventory">
+                            <i class="fas fa-arrow-right"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-striped mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Item</th>
+                                    <th>Specs</th>
+                                    <th class="text-center">Stock</th>
+                                    <th class="text-right">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse($criticalStockItems as $cItem)
+                                    <tr>
+                                        <td>
+                                            <strong>{{ $cItem->product?->name ?? 'Product' }}</strong>
+                                            <div class="text-muted" style="font-size: 11px;">SKU: {{ $cItem->sku ?? '—' }}</div>
+                                        </td>
+                                        <td>
+                                            <small class="badge badge-light">
+                                                {{ $cItem->color?->name ?? '' }} {{ $cItem->phoneStorage?->capacity ?? '' }}
+                                            </small>
+                                        </td>
+                                        <td class="text-center font-weight-bold">
+                                            <span class="badge {{ $cItem->stock == 0 ? 'badge-danger' : 'badge-warning' }}">
+                                                {{ $cItem->stock }}
+                                            </span>
+                                        </td>
+                                        <td class="text-right">
+                                            <a href="{{ route('webmaster.stock.edit', $cItem->id) }}" class="btn btn-xs btn-outline-danger">
+                                                <i class="fas fa-plus-circle"></i> Restock
+                                            </a>
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="4" class="text-center text-muted py-3">
+                                            <i class="fas fa-check-circle text-success mr-1"></i> All products have healthy stock levels.
+                                        </td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- Live Store Activity Feed --}}
+        <div class="col-lg-6">
+            <div class="card card-outline card-dark">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-stream mr-2"></i>
+                        Live Store Activity
+                    </h3>
+                </div>
+
+                <div class="card-body p-0">
+                    <ul class="products-list product-list-in-card pl-3 pr-3">
+                        @forelse($activity as $item)
+                            <li class="item py-2">
+                                <div class="product-img">
+                                    <div class="d-flex align-items-center justify-content-center rounded-circle" style="width: 36px; height: 36px; background: {{ $item['color'] }}; color: #fff; font-size: 13px;">
+                                        <i class="fas {{ $item['icon'] ?? 'fa-circle' }}"></i>
+                                    </div>
+                                </div>
+                                <div class="product-info ml-2">
+                                    <a href="{{ $item['url'] ?? '#' }}" class="product-title text-dark">
+                                        {!! $item['text'] !!}
+                                    </a>
+                                    <span class="product-description text-muted" style="font-size: 11px;">
+                                        <i class="far fa-clock mr-1"></i> {{ $item['time'] }}
+                                    </span>
+                                </div>
+                            </li>
+                        @empty
+                            <li class="item text-center text-muted py-3">No recent activity.</li>
+                        @endforelse
+                    </ul>
+                </div>
+            </div>
+        </div>
+
     </div>
 
 </div>
 
 @endsection
+
+@push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+<script>
+    const monthLabels = [
+        'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    ];
+
+    const salesData = @json($monthlySales);
+    const revenueByMonth = Array(12).fill(0);
+    const ordersByMonth = Array(12).fill(0);
+
+    salesData.forEach(row => {
+        if (row.month >= 1 && row.month <= 12) {
+            revenueByMonth[row.month - 1] = row.revenue || 0;
+            ordersByMonth[row.month - 1] = row.orders || 0;
+        }
+    });
+
+    const ctx = document.getElementById('revenueChart').getContext('2d');
+
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: monthLabels,
+            datasets: [
+                {
+                    label: 'Revenue ($)',
+                    data: revenueByMonth,
+                    backgroundColor: 'rgba(0, 123, 255, 0.8)',
+                    borderColor: '#007bff',
+                    borderWidth: 1,
+                    borderRadius: 4,
+                    yAxisID: 'y'
+                },
+                {
+                    label: 'Orders Count',
+                    data: ordersByMonth,
+                    backgroundColor: 'rgba(240, 96, 63, 0.4)',
+                    borderColor: '#f0603f',
+                    borderWidth: 1,
+                    borderRadius: 4,
+                    yAxisID: 'y1'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top'
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            if (context.dataset.label === 'Revenue ($)') {
+                                return ' Revenue: $' + Number(context.parsed.y).toLocaleString(undefined, {
+                                    minimumFractionDigits: 2,
+                                    maximumFractionDigits: 2
+                                });
+                            }
+                            return ' Orders: ' + context.parsed.y;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    grid: { display: false }
+                },
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    beginAtZero: true,
+                    grid: { color: 'rgba(0,0,0,0.06)' },
+                    ticks: {
+                        callback: function(value) {
+                            if (value >= 1000) return '$' + (value / 1000) + 'k';
+                            return '$' + value;
+                        }
+                    }
+                },
+                y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    beginAtZero: true,
+                    grid: { drawOnChartArea: false },
+                    ticks: {
+                        precision: 0
+                    }
+                }
+            }
+        }
+    });
+</script>
+@endpush

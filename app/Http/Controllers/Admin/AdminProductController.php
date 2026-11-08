@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Color;
+use App\Models\Gift;
 use App\Models\PhoneModel;
 use App\Models\PhoneStorage;
 use App\Models\Product;
@@ -20,8 +21,7 @@ class AdminProductController extends Controller
     public function index(Request $request)
     {
         // PRO-TIP: Eager loading ('with') prevents the N+1 query problem!
-        $query = Product::with(['category', 'brand', 'phoneModel'])
-            ->withSum('stock', 'quantity');
+        $query = Product::with(['category', 'brand', 'phoneModel', 'variants']);
 
         if ($request->filled('search')) {
             $query->where(function ($q) use ($request) {
@@ -55,11 +55,13 @@ class AdminProductController extends Controller
         $brands = Brand::where('is_active', true)->get();
         $phoneModels = PhoneModel::where('is_active', true)->with('brand')->get();
         $colors = Color::where('is_active', true)->get();
+        $gifts = Gift::where('is_active', true)->get();
         $storages = PhoneStorage::where('is_active', true)->get();
+        $rams = \App\Models\PhoneRam::where('is_active', true)->get();
         $product = new Product;
 
         return view('admin.products.create', compact(
-            'categories', 'brands', 'phoneModels', 'colors', 'storages', 'product'
+            'categories', 'brands', 'phoneModels', 'colors', 'gifts', 'storages', 'rams', 'product'
         ));
     }
 
@@ -75,6 +77,7 @@ class AdminProductController extends Controller
             'specifications' => 'nullable|string',
             'details' => 'nullable|array',
             'base_price' => 'required|numeric|min:0',
+            'stock' => 'nullable|integer|min:0',
             'sale_price' => 'nullable|numeric|min:0',
             'discount' => 'nullable|numeric|min:0|max:100',
             'is_active' => 'boolean',
@@ -93,12 +96,26 @@ class AdminProductController extends Controller
             'variants' => 'nullable|array',
             'variants.*.color_id' => 'required|exists:colors,id',
             'variants.*.phone_storage_id' => 'required|exists:phone_storages,id',
+            'variants.*.phone_ram_id' => 'nullable|exists:phone_rams,id',
             'variants.*.price' => 'required|numeric|min:0',
             'variants.*.stock' => 'required|integer|min:0',
-            'variants.*.sku' => 'nullable|string',
+            'variants.*.sku' => 'nullable|string|max:255',
             'color_images' => 'nullable|array',
             'color_images.*' => 'image|max:2048',
+            'gifts' => 'nullable|array',
+            'gifts.*' => 'exists:gifts,id',
+            'gift_quantity' => 'nullable|array',
+            'gift_quantity.*' => 'integer|min:1',
+            'rams' => 'nullable|array',
+            'rams.*' => 'exists:phone_rams,id',
+            'ram_price' => 'nullable|array',
+            'ram_price.*' => 'numeric|min:0',
+            'product_rams' => 'nullable|array',
+            'product_rams.*' => 'exists:phone_rams,id',
+            'ram_price' => 'nullable|array',
+            'ram_price.*' => 'numeric|min:0',
         ]);
+      
 
         $validated['slug'] = Str::slug($validated['name']);
 
@@ -142,13 +159,13 @@ class AdminProductController extends Controller
                     ]);
                 }
             }
-
             // Create product variants
             if (! empty($validated['variants'])) {
                 foreach ($validated['variants'] as $variantData) {
                     $product->variants()->create([
                         'color_id' => $variantData['color_id'],
                         'phone_storage_id' => $variantData['phone_storage_id'],
+                        'phone_ram_id' => $variantData['phone_ram_id'] ?? null,
                         'price' => $variantData['price'],
                         'stock' => $variantData['stock'],
                         'sku' => $variantData['sku'] ?? null,
@@ -172,12 +189,33 @@ class AdminProductController extends Controller
                 }
             }
 
+            // Sync gifts
+            if (! empty($validated['gifts'])) {
+                $syncData = [];
+                foreach ($validated['gifts'] as $giftId) {
+                    $qty = $validated['gift_quantity'][$giftId] ?? 1;
+                    $syncData[$giftId] = ['quantity' => $qty];
+                }
+                $product->gifts()->sync($syncData);
+            }
+
+            // Sync RAMs — change $validated['rams'] to $validated['product_rams']:
+            if (! empty($validated['product_rams'])) {
+                $syncData = [];
+                foreach ($validated['product_rams'] as $ramId) {
+                $price = $validated['ram_price'][$ramId] ?? 0;
+                $syncData[$ramId] = ['price' => $price, 'is_active' => true];
+                }
+                    $product->rams()->sync($syncData);
+            }
+
             // Initialize stock entries (legacy - for backward compatibility)
             $colorIds = collect($validated['colors'] ?? [])->map(fn ($c) => is_array($c) ? $c['id'] : $c)->toArray();
             $storageIds = collect($validated['storages'] ?? [])->map(fn ($s) => is_array($s) ? $s['id'] : $s)->toArray();
 
+            $initialStock = (int) ($validated['stock'] ?? $request->input('stock', 0));
             if (empty($colorIds) && empty($storageIds)) {
-                Stock::create(['product_id' => $product->id, 'quantity' => 0]);
+                Stock::create(['product_id' => $product->id, 'quantity' => $initialStock]);
             } else {
                 foreach ($colorIds ?: [null] as $cid) {
                     foreach ($storageIds ?: [null] as $sid) {
@@ -201,6 +239,7 @@ class AdminProductController extends Controller
             'category', 'brand', 'phoneModel',
             'productColors.color', 'productStorages.phoneStorage',
             'stock.color', 'stock.phoneStorage',
+            'variants.color', 'variants.phoneStorage', 'variants.phoneRam',
             'reviews' => fn ($q) => $q->latest()->take(5),
         ]);
 
@@ -209,16 +248,18 @@ class AdminProductController extends Controller
 
     public function edit(Product $product)
     {
-        $product->load(['productColors', 'productStorages', 'stock']);
+        $product->load(['productColors', 'productStorages', 'stock', 'gifts', 'rams', 'variants', 'variantImages']);
         $categories = Category::where('is_active', true)->get();
         $brands = Brand::where('is_active', true)->get();
         $phoneModels = PhoneModel::where('is_active', true)->with('brand')->get();
         $colors = Color::where('is_active', true)->get();
+        $gifts = Gift::where('is_active', true)->get();
         $storages = PhoneStorage::where('is_active', true)->get();
+        $rams = \App\Models\PhoneRam::where('is_active', true)->get();
         $statusOptions = ['active', 'inactive', 'draft'];
 
         return view('admin.products.edit', compact(
-            'product', 'categories', 'brands', 'phoneModels', 'colors', 'storages', 'statusOptions'
+            'product', 'categories', 'brands', 'phoneModels','gifts', 'colors', 'storages', 'rams', 'statusOptions'
         ));
     }
 
@@ -246,6 +287,7 @@ class AdminProductController extends Controller
             'specifications' => 'nullable|string',
             'details' => 'nullable|array',
             'base_price' => 'required|numeric|min:0',
+            'stock' => 'nullable|integer|min:0',
             'sale_price' => 'nullable|numeric|min:0',
             'discount' => 'nullable|numeric|min:0|max:100',
             'is_active' => 'boolean',
@@ -260,11 +302,20 @@ class AdminProductController extends Controller
             'variants' => 'nullable|array',
             'variants.*.color_id' => 'required|exists:colors,id',
             'variants.*.phone_storage_id' => 'required|exists:phone_storages,id',
+            'variants.*.phone_ram_id' => 'nullable|exists:phone_rams,id',
             'variants.*.price' => 'required|numeric|min:0',
             'variants.*.stock' => 'required|integer|min:0',
-            'variants.*.sku' => 'nullable|string',
+            'variants.*.sku' => 'nullable|string|max:255',
             'color_images' => 'nullable|array',
             'color_images.*' => 'image|max:2048',
+            'gifts' => 'nullable|array',
+            'gifts.*' => 'exists:gifts,id',
+            'gift_quantity' => 'nullable|array',
+            'gift_quantity.*' => 'integer|min:1',
+            'rams' => 'nullable|array',
+            'rams.*' => 'exists:phone_rams,id',
+            'ram_price' => 'nullable|array',
+            'ram_price.*' => 'numeric|min:0',
         ]);
         $validated['slug'] = Str::slug($validated['name']);
         $validated['is_active'] = $request->boolean('is_active');
@@ -320,12 +371,13 @@ class AdminProductController extends Controller
             if (! empty($validated['variants'])) {
                 // Delete all existing variants for this product
                 $product->variants()->delete();
-                
+
                 // Create new variants from the submitted data
                 foreach ($validated['variants'] as $variantData) {
                     $product->variants()->create([
                         'color_id' => $variantData['color_id'],
                         'phone_storage_id' => $variantData['phone_storage_id'],
+                        'phone_ram_id' => $variantData['phone_ram_id'] ?? null,
                         'price' => $variantData['price'],
                         'stock' => $variantData['stock'],
                         'sku' => $variantData['sku'] ?? null,
@@ -355,9 +407,32 @@ class AdminProductController extends Controller
                 }
             }
 
-            // 7. Update Stock Combinations safely (Adds new combinations without deleting existing quantities)
+            // 7. Sync gifts
+            if (! empty($validated['gifts'])) {
+                $syncData = [];
+                foreach ($validated['gifts'] as $giftId) {
+                    $qty = $validated['gift_quantity'][$giftId] ?? 1;
+                    $syncData[$giftId] = ['quantity' => $qty];
+                }
+                $product->gifts()->sync($syncData);
+            }
+
+            // 8. Sync RAMs
+            if (! empty($validated['rams'])) {
+                $syncData = [];
+                foreach ($validated['rams'] as $ramId) {
+                    $price = $validated['ram_price'][$ramId] ?? 0;
+                    $syncData[$ramId] = ['price' => $price, 'is_active' => true];
+                }
+                $product->rams()->sync($syncData);
+            }
+
+            // 8. Update Stock Combinations safely (Adds new combinations without deleting existing quantities)
             if (empty($colorIds) && empty($storageIds)) {
-                Stock::firstOrCreate(['product_id' => $product->id, 'color_id' => null, 'phone_storage_id' => null], ['quantity' => 0]);
+                $baseStock = Stock::firstOrCreate(['product_id' => $product->id, 'color_id' => null, 'phone_storage_id' => null], ['quantity' => 0]);
+                if ($request->has('stock')) {
+                    $baseStock->update(['quantity' => (int) $request->input('stock', 0)]);
+                }
             } else {
                 foreach ($colorIds ?: [null] as $cid) {
                     foreach ($storageIds ?: [null] as $sid) {

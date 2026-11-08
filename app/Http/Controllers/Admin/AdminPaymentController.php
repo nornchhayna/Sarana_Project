@@ -38,10 +38,18 @@ class AdminPaymentController extends Controller
 
         $payments = $query->latest()->paginate(20)->withQueryString();
 
+        // Optimize totals calculation with a single query
+        $totals = Payment::selectRaw('status, SUM(amount) as total')
+            ->whereIn('status', ['paid', 'pending', 'refunded'])
+            ->groupBy('status')
+            ->pluck('total', 'status')
+            ->toArray();
+
+        // Ensure all statuses have values
         $totals = [
-            'paid' => Payment::where('status', 'paid')->sum('amount'),
-            'pending' => Payment::where('status', 'pending')->sum('amount'),
-            'refunded' => Payment::where('status', 'refunded')->sum('amount'),
+            'paid' => $totals['paid'] ?? 0,
+            'pending' => $totals['pending'] ?? 0,
+            'refunded' => $totals['refunded'] ?? 0,
         ];
 
         return view('admin.payments.index', compact('payments', 'totals'));
@@ -54,28 +62,32 @@ class AdminPaymentController extends Controller
         return view('admin.payments.show', compact('payment'));
     }
 
+    public function verify(Payment $payment)
+    {
+        return $this->approve($payment);
+    }
+
     public function approve(Payment $payment)
     {
         if ($payment->status !== 'pending') {
             return back()->with('error', 'Only pending payments can be approved.');
         }
 
-        $payment->update([
-            'status' => 'paid',
-            'paid_at' => now(),
-        ]);
+        app(\App\Services\OrderFulfillmentService::class)->markAsPaid($payment->order, $payment);
 
-        // Update order status
-        $payment->order->update(['status' => 'confirmed']);
-
-        // Auto-generate invoice if not exists
-        if (! $payment->order->invoice) {
-            Invoice::create([
-                'order_id' => $payment->order->id,
-                'invoice_number' => 'INV-'.str_pad($payment->order->id, 6, '0', STR_PAD_LEFT),
-                'issued_at' => now()->toDateString(),
-                'due_at' => now()->addDays(7)->toDateString(),
+        $payment->refresh();
+        if ($payment->status !== 'paid') {
+            $payment->update([
                 'status' => 'paid',
+                'paid_at' => $payment->paid_at ?? now(),
+            ]);
+        }
+
+        $payment->order->refresh();
+        if ($payment->order->status === 'pending') {
+            $payment->order->update([
+                'status' => 'confirmed',
+                'confirmed_at' => $payment->order->confirmed_at ?? now(),
             ]);
         }
 

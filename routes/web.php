@@ -25,6 +25,13 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\EmailVerificationController;
 
 
+Route::get('/forgot-password/verify-otp', [
+    PasswordResetController::class,
+    'showVerifyOtpForm',
+])->name('auth.password.verify-otp');
+
+Route::post('/forgot-password/verify-otp', [PasswordResetController::class, 'verifyOtp'])
+    ->name('auth.password.verify-otp.submit');
 Route::get('/lang/{locale}', function ($locale) {
     if (in_array($locale, ['en', 'km'])) {
         session()->put('locale', $locale);
@@ -40,27 +47,19 @@ Route::prefix('blog')->name('blog.')->group(function () {
     Route::get('/', [BlogController::class, 'index'])->name('index');
     Route::get('/{slug}', [BlogController::class, 'show'])->name('show');
 });
+
+// Admin login routes (no authentication required)
 Route::get('/admin/login', [LoginController::class, 'showAdminLoginForm'])->name('admin.login');
 Route::post('/admin/login', [LoginController::class, 'adminLogin'])->name('admin.login.post');
+
+// Webmaster login routes (no authentication required)
 Route::get('/webmaster/login', [LoginController::class, 'showWebmasterLoginForm'])->name('webmaster.login');
 Route::post('/webmaster/login', [LoginController::class, 'webmasterLogin'])->name('webmaster.login.post');
 
-Route::middleware(['auth', 'role:admin'])
-    ->prefix('admin')
-    ->name('admin.')
-    ->group(function () {
-        Route::get('/dashboard', [AdminDashboardController::class, 'index'])
-            ->name('dashboard');
-    });
-
-Route::middleware(['auth', 'role:webmaster'])
-    ->prefix('webmaster')
-    ->name('webmaster.')
-    ->group(function () {
-        Route::get('/dashboard', [\App\Http\Controllers\Webmaster\DashboardController::class, 'index'])
-            ->name('dashboard');
-    });
-
+Route::middleware(['auth'])->prefix('user')->name('user.')->group(function () {
+    Route::get('/orders', [OrderController::class, 'index'])
+        ->name('orders');
+});
 Route::get('/dashboard', function () {
 
     $user = auth()->user();
@@ -97,6 +96,29 @@ Route::middleware('guest')->group(function () {
     Route::post('/forgot-password', [PasswordResetController::class, 'sendResetOtp'])->name('auth.password.send-otp');
 });
  Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
+// Public product browsing
+Route::prefix('products')->name('products.')->group(function () {
+    Route::get('/', [ProductController::class, 'index'])->name('index');
+    Route::get('/{slug}', [ProductController::class, 'show'])->name('show');
+});
+
+// Public category browsing
+Route::prefix('categories')->name('categories.')->group(function () {
+    Route::get('/', [CategoryController::class, 'index'])->name('index');
+    Route::get('/{slug}', [CategoryController::class, 'show'])->name('show');
+    Route::get('/{parentSlug}/{childSlug}', [CategoryController::class, 'showSubcategory'])->name('showSubcategory');
+});
+
+// Public static & policy pages
+Route::get('/about', function () {
+    return view('web.about');
+})->name('about');
+Route::view('/shipping-policy', 'web.shipping-policy')->name('shipping-policy');
+Route::view('/warranty', 'web.warranty-policy')->name('warranty-policy');
+Route::view('/privacy', 'web.privacy-policy')->name('privacy-policy');
+Route::view('/terms', 'web.terms-and-conditions')->name('terms-and-conditions');
+Route::view('/faq', 'web.faq')->name('faq');
+
 Route::middleware('auth')->group(function () {
 
    
@@ -107,20 +129,19 @@ Route::middleware('auth')->group(function () {
         Route::post('/cart/buy-now', [CartController::class, 'buyNow'])->name('cart.buyNow');
         Route::put('/items/{cartItem}', [CartController::class, 'update'])->name('update');
         Route::delete('/items/{cartItem}', [CartController::class, 'remove'])->name('remove');
-        Route::post('/promotion', [CartController::class, 'applyPromotion'])
-            ->name('apply-promotion');
-        Route::delete('/promotion', [CartController::class, 'removePromotion'])->name('promotion.remove');
+       Route::post('/promotion', [CartController::class, 'applyPromotion'])
+        ->name('apply-promotion');
+
+    Route::delete('/promotion', [CartController::class, 'removePromotion'])
+        ->name('remove-promotion');
     });
 
-    Route::middleware('auth')->group(function () {
-
-        Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
-        Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
-        Route::get('/checkout/{order}/payment', [CheckoutController::class, 'payment'])->name('checkout.payment');
-        Route::get('/checkout/{order}/payment/status', [CheckoutController::class, 'paymentStatus'])->name('checkout.payment.status');
-        Route::post('/checkout/{order}/payment/cancel', [CheckoutController::class, 'cancelPayment'])->name('checkout.payment.cancel');
-
-    });
+    Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
+    Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
+    Route::get('/checkout/{order}/payment', [CheckoutController::class, 'payment'])->name('checkout.payment');
+    Route::get('/checkout/{order}/confirmation', [CheckoutController::class, 'confirmation'])->name('checkout.confirmation');
+    Route::get('/checkout/{order}/payment/status', [CheckoutController::class, 'paymentStatus'])->name('checkout.payment.status');
+    Route::post('/checkout/{order}/payment/cancel', [CheckoutController::class, 'cancelPayment'])->name('checkout.payment.cancel');
 
     Route::prefix('orders')->name('orders.')->group(function () {
         Route::get('/', [OrderController::class, 'index'])->name('index');
@@ -143,11 +164,6 @@ Route::middleware('auth')->group(function () {
         Route::delete('/{wishlist}', [WishlistController::class, 'destroy'])->name('destroy');
     });
 
-    Route::prefix('products')->name('products.')->group(function () {
-        Route::get('/', [ProductController::class, 'index'])->name('index');
-        Route::get('/{slug}', [ProductController::class, 'show'])->name('show');
-    });
-
     Route::prefix('reviews')->name('reviews.')->group(function () {
         Route::get('/', [ReviewController::class, 'index'])->name('index');
         Route::get('/create/{product}', [ReviewController::class, 'create'])->name('create');
@@ -164,21 +180,6 @@ Route::middleware('auth')->group(function () {
         Route::put('/password', [ProfileController::class, 'changePassword'])->name('password');
         Route::delete('/avatar', [ProfileController::class, 'removeAvatar'])->name('avatar.remove');
     });
-
-    Route::prefix('categories')->name('categories.')->group(function () {
-        Route::get('/', [CategoryController::class, 'index'])->name('index');
-        Route::get('/{slug}', [CategoryController::class, 'show'])->name('show');
-        Route::get('/{parentSlug}/{childSlug}', [CategoryController::class, 'showSubcategory'])->name('showSubcategory');
-    });
-
-    Route::get('/about', function () {
-        return view('web.about');
-    })->name('about');
-Route::view('/shipping-policy', 'web.shipping-policy')->name('shipping-policy');
-Route::view('/warranty', 'web.warranty-policy')->name('warranty-policy');
-Route::view('/privacy', 'web.privacy-policy')->name('privacy-policy');
-Route::view('/terms', 'web.terms-and-conditions')->name('terms-and-conditions');
-Route::view('/faq', 'web.faq')->name('faq');
     Route::prefix('notifications')->name('notifications.')->group(function () {
         Route::get('/index', [NotificationController::class, 'index'])->name('index');
         Route::get('/unread-count', [NotificationController::class, 'unreadCount'])->name('unread-count');

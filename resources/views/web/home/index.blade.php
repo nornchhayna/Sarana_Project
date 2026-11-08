@@ -130,24 +130,28 @@
     </div>
 </div>
 
+@if($featuredProducts->count())
 @include('layouts.partials.product-carousel', [
     'products' => $featuredProducts,
     'title' => __('messages.feature_product'),
     'sectionId' => 'featured',
     'viewAllRoute' => route('products.index', ['is_featured' => 1]),
 ])
+@endif
 {{-- ===============================
     Featured Categories
 ================================ --}}
+@if($accessoryProducts->count())
 @include('layouts.partials.product-carousel', [
     'title' => 'Accessories',
     'products' => $accessoryProducts,
     'sectionId' => 'accessories',
    'viewAllRoute' => route('categories.show', ['slug' => $accessoriesCategory->slug ?? 'accessories']),
 ])
-<section class="py-8">
+@endif
+<section class="py-3">
 
-    <div class="max-w-[1280px] mx-auto px-4 ">
+    <div class="max-w-[1280px] mx-auto px-4 sm:px-6 ">
         {{-- Header --}}
         <div class="flex items-end justify-between mb-7">
             <div>
@@ -214,31 +218,37 @@
     </div>
 </section>
 
+@if($newProducts->count())
 @include('layouts.partials.product-carousel', [
     'products' => $newProducts,
     'title' => 'New Arrivals',
     'sectionId' => 'newarrivals',
     'viewAllRoute' => route('products.index', ['is_new' => 1]),
 ])
+@endif
 
 @include('layouts.partials.hero-banner')
 
+@if($bestSellers->count())
 @include('layouts.partials.product-carousel', [
     'title' => 'Best Sellers',
     'products' => $bestSellers,
     'sectionId' => 'best-sellers',
-    'viewAllRoute' => route('products.index', ['sort' => 'best_selling']),
+    'viewAllRoute' => route('products.index', ['sort' => 'best_seller']),
 ])
+@endif
+@if($preOrderProducts->count())
 @include('layouts.partials.product-carousel', [
     'products' => $preOrderProducts,
     'title' => 'Pre-Order',
     'sectionId' => 'preorder',
     'viewAllRoute' => route('products.index', ['is_pre_order' => 1]),
 ])
+@endif
 
 
 {{-- Reviews Section --}}
-<section class="mt-10 py-5">
+<section class="mt-10 py-1">
 
     <div class="max-w-[1280px] mx-auto px-4">
         {{-- Header --}}
@@ -370,7 +380,7 @@
 
 {{-- Blog Section --}}
 @if($blogPosts->count())
-<section class="mt-10 py-8">
+<section class="mt-10 -pt-1 pb-8">
     <div class="max-w-[1280px] mx-auto px-4">
         <div class="flex items-center justify-between mb-6">
             <h2 class="text-2xl font-bold text-gray-800">Latest Blog Posts</h2>

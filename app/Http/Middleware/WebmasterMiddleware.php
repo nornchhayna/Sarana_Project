@@ -16,14 +16,24 @@ class WebmasterMiddleware
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (! Auth::guard('webmaster')->check()) {
+        $user = Auth::guard('webmaster')->user() ?? Auth::guard('web')->user();
+
+        if (! $user) {
             return redirect()->route('webmaster.login')
                 ->with('error', 'Please log in to access the webmaster panel.');
         }
 
-        if (! in_array(Auth::guard('webmaster')->user()->role, ['webmaster'], true)) {
+        if (! in_array($user->role, ['webmaster'], true)) {
             abort(403, 'You do not have permission to access the webmaster panel.');
         }
+
+        if (! Auth::guard('webmaster')->check()) {
+            Auth::guard('webmaster')->login($user);
+        }
+        if (! Auth::guard('web')->check()) {
+            Auth::guard('web')->login($user);
+        }
+        Auth::shouldUse('webmaster');
 
         return $next($request);
     }

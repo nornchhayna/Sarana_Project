@@ -377,9 +377,12 @@
             </nav>
 
             <nav class="nav-section">
-                <div class="nav-label">Customers</div>
+                <div class="nav-label">Users & Staff</div>
                 <a href="{{ route('admin.users.index') }}" class="nav-item {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
                     <i class="fa-solid fa-users"></i> Users
+                </a>
+                <a href="{{ route('admin.webmasters.index') }}" class="nav-item {{ request()->routeIs('admin.webmasters.*') ? 'active' : '' }}">
+                    <i class="fa-solid fa-user-shield"></i> Webmasters
                 </a>
                 <a href="{{ route('admin.reviews.index') }}" class="nav-item {{ request()->routeIs('admin.reviews.*') ? 'active' : '' }}">
                     <i class="fa-solid fa-star"></i> Reviews

@@ -75,6 +75,7 @@ Route::prefix('models')->name('models.')->group(function () {
     Route::get('/{phoneModel}/edit', [WebmasterModelController::class, 'edit'])->name('edit');
     Route::put('/{phoneModel}', [WebmasterModelController::class, 'update'])->name('update');
     Route::delete('/{phoneModel}', [WebmasterModelController::class, 'destroy'])->name('destroy');
+    Route::patch('/{phoneModel}/toggle-status', [WebmasterModelController::class, 'toggleStatus'])->name('toggle-status');
 });
 
 // ── Phone Storage options ──────────────────────
@@ -85,6 +86,7 @@ Route::prefix('storages')->name('storages.')->group(function () {
     Route::get('/{phoneStorage}/edit', [WebmasterStorageController::class, 'edit'])->name('edit');
     Route::put('/{phoneStorage}', [WebmasterStorageController::class, 'update'])->name('update');
     Route::delete('/{phoneStorage}', [WebmasterStorageController::class, 'destroy'])->name('destroy');
+    Route::patch('/{phoneStorage}/toggle-status', [WebmasterStorageController::class, 'toggleStatus'])->name('toggle-status');
 });
 
 // ── Stock ──────────────────────────────────────
@@ -117,6 +119,8 @@ Route::prefix('promotions')->name('promotions.')->group(function () {
     Route::put('/{promotion}', [WebmasterPromotionController::class, 'update'])->name('update');
     Route::delete('/{promotion}', [WebmasterPromotionController::class, 'destroy'])->name('destroy');
     Route::patch('/{promotion}/toggle', [WebmasterPromotionController::class, 'toggle'])->name('toggle');
+    Route::patch('/{promotion}/toggle-status', [WebmasterPromotionController::class, 'toggleStatus'])->name('toggle-status');
+    Route::post('/{promotion}/reset-usage', [WebmasterPromotionController::class, 'resetUsage'])->name('reset-usage');
 });
 
 // ── Orders ─────────────────────────────────────
@@ -133,6 +137,9 @@ Route::prefix('payments')->name('payments.')->group(function () {
     Route::get('/', [WebmasterPaymentController::class, 'index'])->name('index');
     Route::get('/{payment}', [WebmasterPaymentController::class, 'show'])->name('show');
     Route::patch('/{payment}/verify', [WebmasterPaymentController::class, 'verify'])->name('verify');
+    Route::put('/{payment}/approve', [WebmasterPaymentController::class, 'approve'])->name('approve');
+    Route::put('/{payment}/reject', [WebmasterPaymentController::class, 'reject'])->name('reject');
+    Route::put('/{payment}/refund', [WebmasterPaymentController::class, 'refund'])->name('refund');
 });
 
 // ── Invoices ───────────────────────────────────
@@ -155,7 +162,10 @@ Route::prefix('reviews')->name('reviews.')->group(function () {
 // ── Contacts ────────────────────────────────────
 Route::prefix('contacts')->name('contacts.')->group(function () {
     Route::get('/', [WebmasterContactController::class, 'index'])->name('index');
+    Route::post('/bulk-mark-read', [WebmasterContactController::class, 'bulkMarkRead'])->name('bulk-mark-read');
+    Route::post('/bulk-destroy', [WebmasterContactController::class, 'bulkDestroy'])->name('bulk-destroy');
     Route::get('/{contact}', [WebmasterContactController::class, 'show'])->name('show');
     Route::post('/{contact}/reply', [WebmasterContactController::class, 'reply'])->name('reply');
     Route::post('/{contact}/mark-read', [WebmasterContactController::class, 'markRead'])->name('mark-read');
+    Route::delete('/{contact}', [WebmasterContactController::class, 'destroy'])->name('destroy');
 });

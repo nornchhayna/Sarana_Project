@@ -77,7 +77,9 @@ class BakongKHQRService
 
     protected array $merchantConfig = [];
 
-    public const DEFAULT_TTL_SECONDS = 30 * 60; // 30 minutes
+    public const DEFAULT_TTL_DAYS = 3; // 3 days (max allowed by Bakong is typically 3-7 days)
+
+    public const DEFAULT_TTL_SECONDS = self::DEFAULT_TTL_DAYS * 24 * 60 * 60; // For internal use
 
     public function __construct()
     {
@@ -161,6 +163,8 @@ class BakongKHQRService
         $currency = $currencyCode === 116 ? 'KHR' : 'USD';
         $ref = (string) ($params['ref'] ?? '');
         $ttlSeconds = (int) ($params['ttl_seconds'] ?? self::DEFAULT_TTL_SECONDS);
+        // Convert seconds to days for Python script (which expects days)
+        $ttlDays = max(1, (int) ceil($ttlSeconds / (24 * 60 * 60)));
 
         $process = new Process([
             $python,
@@ -182,7 +186,7 @@ class BakongKHQRService
             '--terminal-label',
             (string) ($params['terminal_label'] ?? 'Online'),
             '--expiration',
-            (string) $ttlSeconds,
+            (string) $ttlDays,
         ]);
 
         $process->setTimeout(15);
@@ -331,5 +335,110 @@ class BakongKHQRService
     public function isPaid(string $md5): bool
     {
         return $this->checkByMd5($md5);
+    }
+
+    /**
+     * Generate KHQR for an Order with automatic EMVCo fallback if Python/config fails.
+     */
+    public function generateQRForOrder(\App\Models\Order $order): array
+    {
+        try {
+            $bakong = \App\Models\Merchantbakongkhqr::first();
+            if ($bakong && ! empty($bakong->bakongAccountID)) {
+                $this->setMerchantConfig($bakong);
+            }
+
+            $res = $this->generateKHQR([
+                'amount' => (float) $order->total,
+                'ref' => $order->order_number,
+                'ttl_seconds' => self::DEFAULT_TTL_SECONDS,
+                'store_label' => config('bakong.merchant_name', 'Ashahi Store'),
+                'terminal_label' => 'Online',
+            ]);
+
+            if (! empty($res['success']) && ! empty($res['qr_string'])) {
+                return [
+                    'success' => true,
+                    'qr_string' => $res['qr_string'],
+                    'qr_code' => $res['qr_string'],
+                    'md5' => $res['md5'],
+                    'amount' => (float) $order->total,
+                    'currency' => (int) config('bakong.currency', 840) === 840 ? 'USD' : 'KHR',
+                    'merchant_name' => $bakong->merchantName ?? config('bakong.merchant_name', 'Ashahi Store'),
+                    'order_number' => $order->order_number,
+                ];
+            }
+        } catch (\Throwable $e) {
+            Log::warning('BakongKHQRService::generateQRForOrder fallback triggered', [
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        return $this->generateFallbackKHQR(
+            (float) $order->total,
+            (string) $order->order_number,
+            (string) config('bakong.merchant_name', 'Ashahi Store')
+        );
+    }
+
+    /**
+     * Build a deterministic EMVCo KHQR string + MD5 hash when the external generator is unavailable.
+     */
+    public function generateFallbackKHQR(float $amount, string $ref, string $merchantName = 'Ashahi Store'): array
+    {
+        $accountId = config('bakong.account_id') ?: 'non_chhayna@bkrt';
+        $city = config('bakong.merchant_city') ?: 'PHNOMPENH';
+        $amountStr = number_format(max(0.01, $amount), 2, '.', '');
+
+        $tlv = fn (string $tag, string $val) => $tag . str_pad((string) strlen($val), 2, '0', STR_PAD_LEFT) . $val;
+
+        $merchantAccount = $tlv('00', $accountId);
+        $additionalData = $tlv('01', substr($ref, 0, 25)) . $tlv('03', 'Online Store') . $tlv('07', 'Online');
+
+        $payloadWithoutCrc =
+            $tlv('00', '01') .
+            $tlv('01', '12') .
+            $tlv('29', $merchantAccount) .
+            $tlv('52', '5999') .
+            $tlv('53', '840') .
+            $tlv('54', $amountStr) .
+            $tlv('58', 'KH') .
+            $tlv('59', substr($merchantName, 0, 25)) .
+            $tlv('60', substr($city, 0, 15)) .
+            $tlv('62', $additionalData) .
+            '6304';
+
+        $crc = $this->crc16Ccitt($payloadWithoutCrc);
+        $qrString = $payloadWithoutCrc . $crc;
+        $md5 = md5($qrString);
+
+        return [
+            'success' => true,
+            'qr_string' => $qrString,
+            'qr_code' => $qrString,
+            'md5' => $md5,
+            'amount' => (float) $amount,
+            'currency' => 'USD',
+            'merchant_name' => $merchantName,
+            'order_number' => $ref,
+        ];
+    }
+
+    private function crc16Ccitt(string $data): string
+    {
+        $crc = 0xFFFF;
+        $len = strlen($data);
+        for ($i = 0; $i < $len; $i++) {
+            $crc ^= (ord($data[$i]) << 8);
+            for ($j = 0; $j < 8; $j++) {
+                if (($crc & 0x8000) !== 0) {
+                    $crc = (($crc << 1) ^ 0x1021) & 0xFFFF;
+                } else {
+                    $crc = ($crc << 1) & 0xFFFF;
+                }
+            }
+        }
+
+        return strtoupper(str_pad(dechex($crc), 4, '0', STR_PAD_LEFT));
     }
 }

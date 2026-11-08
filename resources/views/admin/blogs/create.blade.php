@@ -1,73 +1,252 @@
 @extends('layouts.admin')
 
 @section('content')
-<div class="max-w-3xl mx-auto px-4 py-6">
-    <div class="flex items-center justify-between mb-6">
-        <h1 class="text-2xl font-bold text-[#253D4E]">New Blog Post</h1>
-        <a href="{{ route('admin.blogs.index') }}" class="text-sm text-gray-500 hover:text-gray-700">
-            &larr; Back to list
-        </a>
-    </div>
 
-    <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
-        <form action="{{ route('admin.blogs.store') }}" method="POST" enctype="multipart/form-data" class="space-y-5">
-            @csrf
-
-            <div>
-                <label for="title" class="block text-sm font-medium text-[#253D4E] mb-1">Title</label>
-                <input type="text" name="title" id="title" value="{{ old('title') }}" required
-                       class="w-full bg-gray-100 border-0 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#f0603f] focus:bg-white">
-                @error('title') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0">New Blog Post</h1>
             </div>
 
-            <div>
-                <label for="excerpt" class="block text-sm font-medium text-[#253D4E] mb-1">Excerpt</label>
-                <textarea name="excerpt" id="excerpt" rows="2"
-                          class="w-full bg-gray-100 border-0 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#f0603f] focus:bg-white">{{ old('excerpt') }}</textarea>
-                @error('excerpt') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                    <li class="breadcrumb-item">
+                        <a href="{{ route('admin.blogs.index') }}">Blogs</a>
+                    </li>
+                    <li class="breadcrumb-item active">New Post</li>
+                </ol>
             </div>
-
-            <div>
-                <label for="content" class="block text-sm font-medium text-[#253D4E] mb-1">Content</label>
-                <textarea name="content" id="content" rows="10" required
-                          class="w-full bg-gray-100 border-0 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#f0603f] focus:bg-white">{{ old('content') }}</textarea>
-                @error('content') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
-            </div>
-
-            <div>
-                <label for="image" class="block text-sm font-medium text-[#253D4E] mb-1">Featured Image</label>
-                <input type="file" name="image" id="image" accept="image/*"
-                       class="w-full bg-gray-100 border-0 rounded-lg px-4 py-2.5 text-sm file:mr-4 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:bg-[#253D4E] file:text-white file:text-xs">
-                @error('image') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
-            </div>
-
-            <div class="flex gap-6 items-end">
-                <label class="flex items-center gap-2 text-sm text-[#253D4E]">
-                    <input type="checkbox" name="is_published" value="1" {{ old('is_published') ? 'checked' : '' }}
-                           class="rounded border-gray-300 text-[#f0603f] focus:ring-[#f0603f]">
-                    Publish immediately
-                </label>
-
-                <div class="flex-1">
-                    <label for="published_at" class="block text-sm font-medium text-[#253D4E] mb-1">
-                        Publish date (optional)
-                    </label>
-                    <input type="date" name="published_at" id="published_at" value="{{ old('published_at') }}"
-                           class="w-full bg-gray-100 border-0 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#f0603f] focus:bg-white">
-                </div>
-            </div>
-
-            <div class="flex gap-3 pt-2">
-                <button type="submit"
-                        class="bg-[#f0603f] hover:bg-[#d94f30] text-white px-5 py-2.5 rounded-lg font-medium text-sm transition">
-                    Create Post
-                </button>
-                <a href="{{ route('admin.blogs.index') }}"
-                   class="px-5 py-2.5 rounded-lg font-medium text-sm text-gray-500 hover:bg-gray-100 transition">
-                    Cancel
-                </a>
-            </div>
-        </form>
+        </div>
     </div>
 </div>
+
+<section class="content">
+    <div class="container-fluid">
+
+        <div class="row">
+            <div class="col-md-10 offset-md-1">
+
+                <div class="card card-primary">
+
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-plus-circle mr-1"></i>
+                            Create Blog Post
+                        </h3>
+                    </div>
+
+                    <form action="{{ route('admin.blogs.store') }}"
+                          method="POST"
+                          enctype="multipart/form-data">
+
+                        @csrf
+
+                        <div class="card-body">
+
+                            {{-- Title --}}
+                            <div class="form-group">
+                                <label for="title">
+                                    Title <span class="text-danger">*</span>
+                                </label>
+
+                                <input
+                                    type="text"
+                                    name="title"
+                                    id="title"
+                                    value="{{ old('title') }}"
+                                    class="form-control @error('title') is-invalid @enderror"
+                                    placeholder="Enter blog title"
+                                    required
+                                >
+
+                                @error('title')
+                                    <span class="invalid-feedback">
+                                        {{ $message }}
+                                    </span>
+                                @enderror
+                            </div>
+
+
+                            {{-- Excerpt --}}
+                            <div class="form-group">
+                                <label for="excerpt">
+                                    Excerpt
+                                </label>
+
+                                <textarea
+                                    name="excerpt"
+                                    id="excerpt"
+                                    rows="3"
+                                    class="form-control @error('excerpt') is-invalid @enderror"
+                                    placeholder="Short description of the blog post"
+                                >{{ old('excerpt') }}</textarea>
+
+                                @error('excerpt')
+                                    <span class="invalid-feedback">
+                                        {{ $message }}
+                                    </span>
+                                @enderror
+                            </div>
+
+
+                            {{-- Content --}}
+                            <div class="form-group">
+                                <label for="content">
+                                    Content <span class="text-danger">*</span>
+                                </label>
+
+                                <textarea
+                                    name="content"
+                                    id="content"
+                                    rows="12"
+                                    class="form-control @error('content') is-invalid @enderror"
+                                    placeholder="Write your blog content here..."
+                                    required
+                                >{{ old('content') }}</textarea>
+
+                                @error('content')
+                                    <span class="invalid-feedback">
+                                        {{ $message }}
+                                    </span>
+                                @enderror
+                            </div>
+
+
+                            {{-- Featured Image --}}
+                            <div class="form-group">
+                                <label for="image">
+                                    Featured Image
+                                </label>
+
+                                <div class="custom-file">
+                                    <input
+                                        type="file"
+                                        name="image"
+                                        id="image"
+                                        accept="image/*"
+                                        class="custom-file-input @error('image') is-invalid @enderror"
+                                    >
+
+                                    <label class="custom-file-label" for="image">
+                                        Choose image
+                                    </label>
+                                </div>
+
+                                @error('image')
+                                    <span class="text-danger small">
+                                        {{ $message }}
+                                    </span>
+                                @enderror
+
+                                <small class="form-text text-muted">
+                                    Recommended image format: JPG, JPEG, PNG, WEBP.
+                                </small>
+                            </div>
+
+
+                            {{-- Publish Options --}}
+                            <div class="row">
+
+                                {{-- Publish Immediately --}}
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <div class="custom-control custom-checkbox">
+                                            <input
+                                                type="checkbox"
+                                                name="is_published"
+                                                value="1"
+                                                id="is_published"
+                                                class="custom-control-input"
+                                                {{ old('is_published') ? 'checked' : '' }}
+                                            >
+
+                                            <label
+                                                class="custom-control-label"
+                                                for="is_published"
+                                            >
+                                                Publish immediately
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+
+                                {{-- Publish Date --}}
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="published_at">
+                                            Publish Date
+                                        </label>
+
+                                        <input
+                                            type="date"
+                                            name="published_at"
+                                            id="published_at"
+                                            value="{{ old('published_at') }}"
+                                            class="form-control @error('published_at') is-invalid @enderror"
+                                        >
+
+                                        @error('published_at')
+                                            <span class="invalid-feedback">
+                                                {{ $message }}
+                                            </span>
+                                        @enderror
+
+                                        <small class="form-text text-muted">
+                                            Optional
+                                        </small>
+                                    </div>
+                                </div>
+
+                            </div>
+
+                        </div>
+
+
+                        {{-- Footer --}}
+                        <div class="card-footer">
+
+                            <button
+                                type="submit"
+                                class="btn btn-primary"
+                            >
+                                <i class="fas fa-save mr-1"></i>
+                                Create Post
+                            </button>
+
+                            <a
+                                href="{{ route('admin.blogs.index') }}"
+                                class="btn btn-secondary"
+                            >
+                                <i class="fas fa-times mr-1"></i>
+                                Cancel
+                            </a>
+
+                        </div>
+
+                    </form>
+
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+</section>
+
 @endsection
+
+@push('scripts')
+<script>
+    // Display selected filename
+    document.querySelector('.custom-file-input')?.addEventListener('change', function (e) {
+        const fileName = e.target.files[0]?.name || 'Choose image';
+        const label = e.target.nextElementSibling;
+
+        if (label) {
+            label.textContent = fileName;
+        }
+    });
+</script>
+@endpush

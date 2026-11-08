@@ -1,141 +1,328 @@
 @extends('layouts.admin')
+
 @section('title', 'Categories')
 @section('page-title', 'Categories')
 
 @section('content')
 
-{{-- ── GUARANTEED CSS LOAD ── --}}
-<style>
-    .page-toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; gap: 16px; flex-wrap: wrap; }
-    
-    .btn-primary { background: var(--accent, #5B6EF5); color: #fff; padding: 9px 16px; border-radius: 8px; text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; font-size: 13px; transition: all 0.2s; border: none; cursor: pointer; }
-    .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(91, 110, 245, 0.2); }
-    .btn-secondary { background: var(--card, #1A1E2B); color: var(--text-1, #E8EAF2); border: 1px solid var(--border, #252A3A); padding: 9px 16px; border-radius: 8px; font-weight: 600; font-size: 13px; cursor: pointer; transition: all 0.2s; }
-    .btn-secondary:hover { border-color: var(--accent, #5B6EF5); color: var(--accent, #5B6EF5); }
-    
-    .filters { display: flex; gap: 12px; align-items: center; }
-    .form-input, .form-select { background: var(--bg, #0C0E14); border: 1px solid var(--border, #252A3A); color: var(--text-1, #E8EAF2); padding: 9px 12px; border-radius: 8px; font-size: 13px; font-family: var(--sans, sans-serif); outline: none; transition: border-color 0.2s; }
-    .form-input:focus, .form-select:focus { border-color: var(--accent, #5B6EF5); }
-    .form-select option { background: var(--card, #1A1E2B); color: var(--text-1, #E8EAF2); }
-    
-    /* This specifically fixes the giant image issue */
-    .cat-thumb { width: 44px; height: 44px; border-radius: 8px; background: var(--border, #252A3A); display: grid; place-items: center; overflow: hidden; flex-shrink: 0; color: var(--text-3, #555B72); font-size: 18px; }
-    .cat-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
-    .cat-slug { font-family: var(--mono, monospace); font-size: 11px; color: var(--text-3, #555B72); background: rgba(255,255,255,0.03); padding: 2px 6px; border-radius: 4px; margin-top: 4px; display: inline-block; border: 1px solid var(--border, #252A3A); }
-    
-    .action-group { display: flex; gap: 6px; justify-content: flex-end; }
-    .btn-action { width: 32px; height: 32px; border-radius: 6px; border: 1px solid var(--border, #252A3A); background: var(--card, #1A1E2B); color: var(--text-2, #8B90A7); display: grid; place-items: center; cursor: pointer; transition: all 0.2s; text-decoration: none; font-size: 13px; }
-    .btn-action:hover { border-color: var(--accent, #5B6EF5); color: var(--text-1, #E8EAF2); background: rgba(91, 110, 245, 0.1); }
-    .btn-action.delete:hover { border-color: var(--accent-3, #FF5C7A); color: var(--accent-3, #FF5C7A); background: rgba(255, 92, 122, 0.1); }
-    
-    .card-footer { padding: 16px 22px; border-top: 1px solid var(--border, #252A3A); }
-    
-    /* Table Fixes */
-    .table-wrap { overflow-x: auto; background: var(--card, #1A1E2B); border-radius: 12px; border: 1px solid var(--border, #252A3A); }
-    table { width: 100%; border-collapse: collapse; }
-    thead th { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--text-3, #555B72); padding: 14px 22px; text-align: left; border-bottom: 1px solid var(--border, #252A3A); }
-    tbody tr { border-bottom: 1px solid rgba(37, 42, 58, 0.5); }
-    tbody tr:hover { background: rgba(255, 255, 255, 0.02); }
-    tbody td { padding: 14px 22px; font-size: 13px; color: var(--text-2, #8B90A7); vertical-align: middle; }
-    .status-badge { font-size: 10px; font-weight: 600; padding: 4px 10px; border-radius: 20px; font-family: monospace; }
-    .status-paid { background: rgba(0, 212, 170, 0.12); color: #00D4AA; }
-    .status-pending { background: rgba(245, 166, 35, 0.12); color: #F5A623; }
-</style>
+{{-- Page Header --}}
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0">Categories</h1>
+            </div>
 
-<div class="page-toolbar">
-    <div>
-        <a href="{{ route('admin.categories.create') }}" class="btn-primary">
-            <i class="fa-solid fa-plus"></i> Add Category
-        </a>
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                    <li class="breadcrumb-item">
+                        <a href="{{ route('admin.dashboard') }}">Dashboard</a>
+                    </li>
+                    <li class="breadcrumb-item active">Categories</li>
+                </ol>
+            </div>
+        </div>
     </div>
-    
-    <form class="filters" method="GET">
-        <input type="text" name="search" value="{{ request('search') }}" class="form-input" placeholder="Search categories…">
-        
-        <select name="status" class="form-select" style="width: 140px;">
-            <option value="">All Statuses</option>
-            <option value="1" @selected(request('status') == '1')>Active</option>
-            <option value="0" @selected(request('status') == '0')>Inactive</option>
-        </select>
-        
-        <button class="btn-secondary">Filter</button>
-    </form>
 </div>
 
-<div class="table-wrap">
-    <table>
-        <thead>
-            <tr>
-                <th style="width:70px; padding-left: 22px;">Img</th>
-                <th>Name / Slug</th>
-                <th>Parent Category</th>
-                <th style="text-align: center;">Products</th>
-                <th>Status</th>
-                <th style="text-align: center;">Sort Order</th>
-                <th style="text-align: right; padding-right: 22px;">Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            @forelse($categories as $category)
-            <tr>
-                <td style="padding-left: 22px;">
-                    @if($category->image)
-                        <div class="cat-thumb">
-                            <img src="{{ asset('storage/'.$category->image) }}" alt="{{ $category->name }}">
-                        </div>
-                    @else
-                        <div class="cat-thumb">
-                            <i class="fa-solid fa-layer-group"></i>
-                        </div>
-                    @endif
-                </td>
-                <td>
-                    <div style="color: var(--text-1, #E8EAF2); font-weight: 600;">{{ $category->name }}</div>
-                    <div class="cat-slug">{{ $category->slug }}</div>
-                </td>
-                <td style="color: var(--text-2, #8B90A7);">
-                    {{ $category->parent->name ?? '—' }}
-                </td>
-                <td style="text-align: center;">
-                    <span class="status-badge" style="background: var(--bg, #0C0E14); color: var(--text-2, #8B90A7); border: 1px solid var(--border, #252A3A);">
-                        {{ $category->products_count ?? 0 }}
-                    </span>
-                </td>
-                <td>
-                    <span class="status-badge {{ $category->is_active ? 'status-paid' : 'status-pending' }}">
-                        {{ $category->is_active ? 'Active' : 'Inactive' }}
-                    </span>
-                </td>
-                <td style="text-align: center; font-family: var(--mono, monospace); color: var(--text-3, #555B72);">
-                    {{ $category->sort_order ?? 0 }}
-                </td>
-                <td style="padding-right: 22px;">
-                    <div class="action-group">
-                        <a href="{{ route('admin.categories.edit', $category) }}" class="btn-action" title="Edit">
-                            <i class="fa-solid fa-pen"></i>
-                        </a>
-                        <form method="POST" action="{{ route('admin.categories.destroy', $category) }}" onsubmit="return confirm('Delete this category?')" style="margin: 0;">
-                            @csrf @method('DELETE')
-                            <button class="btn-action delete" title="Delete">
-                                <i class="fa-solid fa-trash"></i>
+
+{{-- Main Content --}}
+<section class="content">
+    <div class="container-fluid">
+
+        {{-- Toolbar --}}
+        <div class="row mb-3">
+
+            {{-- Add Category --}}
+            <div class="col-md-6 mb-2 mb-md-0">
+                <a href="{{ route('admin.categories.create') }}"
+                   class="btn btn-primary">
+                    <i class="fas fa-plus mr-1"></i>
+                    Add Category
+                </a>
+            </div>
+
+            {{-- Filters --}}
+            <div class="col-md-6">
+                <form method="GET" class="form-inline justify-content-md-end">
+
+                    <div class="input-group mr-2 mb-2 mb-md-0">
+                        <input
+                            type="text"
+                            name="search"
+                            value="{{ request('search') }}"
+                            class="form-control"
+                            placeholder="Search categories..."
+                        >
+
+                        <div class="input-group-append">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-search"></i>
                             </button>
-                        </form>
+                        </div>
                     </div>
-                </td>
-            </tr>
-            @empty
-            <tr>
-                <td colspan="7" style="text-align: center; padding: 40px; color: var(--text-3, #555B72);">No categories found.</td>
-            </tr>
-            @endforelse
-        </tbody>
-    </table>
-    
-    @if(method_exists($categories, 'hasPages') && $categories->hasPages())
-    <div class="card-footer">
-        {{ $categories->withQueryString()->links() }}
+
+                    <select
+                        name="status"
+                        class="form-control mr-2 mb-2 mb-md-0"
+                        style="width: 140px;"
+                    >
+                        <option value="">All Statuses</option>
+                        <option value="1" @selected(request('status') == '1')>
+                            Active
+                        </option>
+                        <option value="0" @selected(request('status') == '0')>
+                            Inactive
+                        </option>
+                    </select>
+
+                    <button type="submit" class="btn btn-secondary mb-2 mb-md-0">
+                        <i class="fas fa-filter mr-1"></i>
+                        Filter
+                    </button>
+
+                </form>
+            </div>
+
+        </div>
+
+
+        {{-- Categories Card --}}
+        <div class="card">
+
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-layer-group mr-1"></i>
+                    Category List
+                </h3>
+
+                <div class="card-tools">
+                    <span class="badge badge-info">
+                        {{ $categories->total() }} Categories
+                    </span>
+                </div>
+            </div>
+
+
+            {{-- Table --}}
+            <div class="card-body p-0">
+
+                <div class="table-responsive">
+
+                    <table class="table table-hover table-striped mb-0">
+
+                        <thead>
+                            <tr>
+                                <th style="width: 80px;">Image</th>
+                                <th>Name / Slug</th>
+                                <th>Parent Category</th>
+                                <th class="text-center">Products</th>
+                                <th>Status</th>
+                                <th class="text-center">Sort Order</th>
+                                <th class="text-right">Actions</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+
+                            @forelse($categories as $category)
+
+                                <tr>
+
+                                    {{-- Image --}}
+                                    <td class="align-middle">
+
+                                        @if($category->image)
+
+                                            <img
+                                                src="{{ asset('storage/' . $category->image) }}"
+                                                alt="{{ $category->name }}"
+                                                class="img-thumbnail"
+                                                style="
+                                                    width: 50px;
+                                                    height: 50px;
+                                                    object-fit: cover;
+                                                "
+                                            >
+
+                                        @else
+
+                                            <div
+                                                class="bg-light d-flex align-items-center justify-content-center rounded"
+                                                style="
+                                                    width: 50px;
+                                                    height: 50px;
+                                                "
+                                            >
+                                                <i class="fas fa-layer-group text-muted"></i>
+                                            </div>
+
+                                        @endif
+
+                                    </td>
+
+
+                                    {{-- Name / Slug --}}
+                                    <td class="align-middle">
+
+                                        <strong>
+                                            {{ $category->name }}
+                                        </strong>
+
+                                        <br>
+
+                                        <small class="text-muted">
+                                            {{ $category->slug }}
+                                        </small>
+
+                                    </td>
+
+
+                                    {{-- Parent --}}
+                                    <td class="align-middle">
+
+                                        @if($category->parent)
+
+                                            <span class="text-muted">
+                                                <i class="fas fa-level-up-alt mr-1"></i>
+                                                {{ $category->parent->name }}
+                                            </span>
+
+                                        @else
+
+                                            <span class="text-muted">
+                                                —
+                                            </span>
+
+                                        @endif
+
+                                    </td>
+
+
+                                    {{-- Products --}}
+                                    <td class="text-center align-middle">
+
+                                        <span class="badge badge-secondary">
+                                            {{ $category->products_count ?? 0 }}
+                                        </span>
+
+                                    </td>
+
+
+                                    {{-- Status --}}
+                                    <td class="align-middle">
+
+                                        @if($category->is_active)
+
+                                            <span class="badge badge-success">
+                                                <i class="fas fa-check mr-1"></i>
+                                                Active
+                                            </span>
+
+                                        @else
+
+                                            <span class="badge badge-warning">
+                                                <i class="fas fa-pause mr-1"></i>
+                                                Inactive
+                                            </span>
+
+                                        @endif
+
+                                    </td>
+
+
+                                    {{-- Sort Order --}}
+                                    <td class="text-center align-middle">
+
+                                        <span class="text-muted">
+                                            {{ $category->sort_order ?? 0 }}
+                                        </span>
+
+                                    </td>
+
+
+                                    {{-- Actions --}}
+                                    <td class="text-right align-middle">
+
+                                        <div class="btn-group">
+
+                                            {{-- Edit --}}
+                                            <a
+                                                href="{{ route('admin.categories.edit', $category) }}"
+                                                class="btn btn-sm btn-info"
+                                                title="Edit"
+                                            >
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+
+
+                                            {{-- Delete --}}
+                                            <form
+                                                method="POST"
+                                                action="{{ route('admin.categories.destroy', $category) }}"
+                                                onsubmit="return confirm('Delete this category?')"
+                                                style="display: inline;"
+                                            >
+                                                @csrf
+                                                @method('DELETE')
+
+                                                <button
+                                                    type="submit"
+                                                    class="btn btn-sm btn-danger"
+                                                    title="Delete"
+                                                >
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+
+                                            </form>
+
+                                        </div>
+
+                                    </td>
+
+                                </tr>
+
+                            @empty
+
+                                <tr>
+                                    <td colspan="7" class="text-center py-5">
+
+                                        <i class="fas fa-folder-open fa-3x text-muted mb-3"></i>
+
+                                        <p class="text-muted mb-0">
+                                            No categories found.
+                                        </p>
+
+                                    </td>
+                                </tr>
+
+                            @endforelse
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+
+            {{-- Pagination --}}
+            @if(method_exists($categories, 'hasPages') && $categories->hasPages())
+
+                <div class="card-footer clearfix">
+
+                    <div class="float-right">
+                        {{ $categories->withQueryString()->links() }}
+                    </div>
+
+                </div>
+
+            @endif
+
+        </div>
+
     </div>
-    @endif
-</div>
+</section>
 
 @endsection

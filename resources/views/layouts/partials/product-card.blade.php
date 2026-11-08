@@ -1,6 +1,6 @@
 @php
-    $sold = $product->total_sold ?? 0;
-    $available = $product->stock ? $product->stock->sum('stock') : 0;
+    $sold = $product->actual_sold ?? 0;
+    $available = $product->total_stock ?? 0;
     $total = $sold + $available;
     $percentage = $total > 0 ? ($sold / $total * 100) : 0;
 @endphp
@@ -64,7 +64,7 @@
     {{-- Description --}}
     <div class="block mb-1">
         <p class="text-[12px] sm:text-[13px] text-[#7E7E7E] line-clamp-2 leading-tight min-h-[32px] sm:min-h-[34px]">
-            {{ strip_tags($product->description) ?? 'No description available.' }}
+            {{ strip_tags($product->description ?? '') ?: 'No description available.' }}
         </p>
     </div>
 

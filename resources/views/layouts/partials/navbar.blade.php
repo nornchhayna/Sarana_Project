@@ -7,7 +7,13 @@
         <div class="container">
             {{-- Logo --}}
             <a href="{{ route('home') }}" class="site-logo">
-                <span class="logo-text">PhoneBy<strong>Ashahi</strong></span>
+                @if(!empty($siteSettings['site_logo']))
+                    <img src="{{ asset('storage/' . $siteSettings['site_logo']) }}"
+                         alt="{{ $siteSettings['site_name'] ?? 'Ashahi' }}"
+                         style="max-height: 40px; width: auto; object-fit: contain;">
+                @else
+                    <span class="logo-text">{{ $siteSettings['site_name'] ?? 'PhoneByAshahi' }}</span>
+                @endif
             </a>
             {{-- Right icons --}}
             <div class="header-icons">

@@ -21,17 +21,32 @@ class User extends Authenticatable
 
     protected $fillable = [
         'name',
+        'first_name',
+        'last_name',
         'email',
         'phone',
         'password',
         'role',
+        'role_id',
+        'status',
         'avatar',
         'gender',
         'date_of_birth',
         'address',
         'city',
         'province',
+        'country',
+        'postal_code',
         'is_active',
+        'provider',
+        'provider_id',
+        'provider_token',
+        'email_verified_at',
+    ];
+
+    protected $appends = [
+        'name',
+        'avatar_url',
     ];
 
     protected $hidden = [
@@ -48,6 +63,31 @@ class User extends Authenticatable
         'deleted_at' => 'datetime',
     ];
 
+    protected static function booted(): void
+    {
+        static::saving(function (User $user) {
+            if (! empty($user->attributes['first_name']) || ! empty($user->attributes['last_name'])) {
+                $user->attributes['name'] = trim(($user->attributes['first_name'] ?? '') . ' ' . ($user->attributes['last_name'] ?? ''));
+            }
+            try {
+                static $columns = null;
+                if ($columns === null) {
+                    $columns = \Illuminate\Support\Facades\Schema::getColumnListing($user->getTable());
+                }
+                if (! empty($columns)) {
+                    $columnMap = array_flip($columns);
+                    foreach (array_keys($user->attributes) as $attr) {
+                        if (! isset($columnMap[$attr])) {
+                            unset($user->attributes[$attr]);
+                        }
+                    }
+                }
+            } catch (\Throwable $e) {
+                // Ignore if schema introspection is unavailable
+            }
+        });
+    }
+
     /* ── Scopes ── */
 
     public function scopeActive($query)
@@ -59,6 +99,11 @@ class User extends Authenticatable
     public function contacts()
     {
         return $this->hasMany(Contact::class);
+    }
+
+    public function roles(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(Role::class, 'role_user');
     }
 
     public function unseenReplies()
@@ -97,13 +142,59 @@ class User extends Authenticatable
 
     /* ── Accessors ── */
 
-    public function getAvatarUrlAttribute(): string
+    public function getFirstNameAttribute($value = null): ?string
     {
-        if ($this->avatar) {
-            return asset('storage/'.$this->avatar);
+        if ($value !== null) {
+            return $value;
+        }
+        if (array_key_exists('first_name', $this->attributes) && $this->attributes['first_name'] !== null) {
+            return $this->attributes['first_name'];
+        }
+        if (! empty($this->attributes['name'])) {
+            $parts = explode(' ', trim($this->attributes['name']), 2);
+
+            return $parts[0] ?? '';
         }
 
-        return 'https://ui-avatars.com/api/?name='.urlencode($this->name).'&background=6366f1&color=fff';
+        return null;
+    }
+
+    public function getLastNameAttribute($value = null): ?string
+    {
+        if ($value !== null) {
+            return $value;
+        }
+        if (array_key_exists('last_name', $this->attributes) && $this->attributes['last_name'] !== null) {
+            return $this->attributes['last_name'];
+        }
+        if (! empty($this->attributes['name'])) {
+            $parts = explode(' ', trim($this->attributes['name']), 2);
+
+            return $parts[1] ?? '';
+        }
+
+        return null;
+    }
+
+    public function getNameAttribute($value = null): string
+    {
+        $combined = trim(($this->first_name ?? '') . ' ' . ($this->last_name ?? ''));
+        if ($combined !== '') {
+            return $combined;
+        }
+
+        return trim((string) ($value ?? ($this->attributes['name'] ?? '')));
+    }
+
+    public function getAvatarUrlAttribute(): ?string
+    {
+        if (! empty($this->avatar)) {
+            return str_starts_with($this->avatar, 'http')
+                ? $this->avatar
+                : url('storage/' . ltrim($this->avatar, '/'));
+        }
+
+        return null;
     }
 
     public function getAgeAttribute(): ?int

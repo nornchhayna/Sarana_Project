@@ -21,6 +21,8 @@ class OrderItem extends Model
         'unit_price',
         'subtotal',
         'total_price',
+        'is_gift',
+        'parent_order_item_id',
     ];
 
     protected $casts = [

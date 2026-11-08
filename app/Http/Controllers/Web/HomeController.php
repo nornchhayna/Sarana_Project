@@ -28,6 +28,7 @@ class HomeController extends Controller
         $flashSaleProducts = Product::with(['brand', 'phoneModel', 'stock'])
             ->withCount(['reviews' => fn ($q) => $q->where('is_approved', true)])
             ->withAvg(['reviews as avg_rating' => fn ($q) => $q->where('is_approved', true)], 'rating')
+            ->withSoldCount()
             ->where('is_active', true)
             ->where('is_flash_sale', true)
             ->whereNotNull('sale_price')
@@ -41,11 +42,12 @@ class HomeController extends Controller
         // Featured Products — only products flagged as featured
         $featuredProducts = Product::with(['brand', 'phoneModel', 'stock'])
         ->withCount(['reviews' => fn ($q) => $q->where('is_approved', true)])
-    ->withAvg(['reviews as avg_rating' => fn ($q) => $q->where('is_approved', true)], 'rating') 
+    ->withAvg(['reviews as avg_rating' => fn ($q) => $q->where('is_approved', true)], 'rating')
+    ->withSoldCount()
             ->where('is_active', true)
             ->where('is_featured', true)
             ->orderBy('sort_order')
-            ->take(8)
+            ->take(11)
             ->get();
 
 // Accessories — parent category + all its subcategories (e.g. Charging Cables)
@@ -64,6 +66,7 @@ if ($accessoriesCategory) {
     $accessoryProducts = Product::with(['brand', 'phoneModel', 'stock'])
         ->withCount(['reviews' => fn ($q) => $q->where('is_approved', true)])
         ->withAvg(['reviews as avg_rating' => fn ($q) => $q->where('is_approved', true)], 'rating')
+        ->withSoldCount()
         ->where('is_active', true)
         ->whereIn('category_id', $categoryIds)
         ->latest()
@@ -75,7 +78,8 @@ if ($accessoriesCategory) {
         // New Arrivals — only products flagged as new
         $newProducts = Product::with(['brand', 'phoneModel', 'stock'])
         ->withCount(['reviews' => fn ($q) => $q->where('is_approved', true)])
-    ->withAvg(['reviews as avg_rating' => fn ($q) => $q->where('is_approved', true)], 'rating') 
+    ->withAvg(['reviews as avg_rating' => fn ($q) => $q->where('is_approved', true)], 'rating')
+    ->withSoldCount()
             ->where('is_active', true)
             ->where('is_new', true)
             ->latest()
@@ -84,16 +88,18 @@ if ($accessoriesCategory) {
 
         // Pre-Orders — only products flagged as pre-order
         $preOrderProducts = Product::with(['brand', 'phoneModel', 'stock'])
+            ->withSoldCount()
             ->where('is_active', true)
             ->where('is_pre_order', true)
             ->latest()
             ->take(8)
             ->get();
 
-        // Best sellers — unaffected, still orders by total_sold
+        // Best sellers — products with most actual sales from orders
         $bestSellers = Product::with(['brand', 'phoneModel', 'stock'])
+            ->withSoldCount()
             ->where('is_active', true)
-            ->orderByDesc('total_sold')
+            ->orderByDesc('actual_sold')
             ->take(8)
             ->get();
 

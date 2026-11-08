@@ -40,45 +40,43 @@ class AdminStorageController extends Controller
 
         PhoneStorage::create($validated);
 
-        return redirect()->route('admin.storage.index')
+        return redirect()->route('admin.storages.index')
             ->with('success', 'Storage option created successfully.');
     }
 
-    public function edit($id)
+    public function edit(PhoneStorage $phoneStorage)
     {
-        $storage = PhoneStorage::findOrFail($id);
-
-        return view('admin.storages.edit', compact('storage'));
+        return view('admin.storage.edit', ['storage' => $phoneStorage]);
     }
 
-    public function update(Request $request, PhoneStorage $storage)
+    public function update(Request $request, PhoneStorage $phoneStorage)
     {
         $validated = $request->validate([
-            'capacity' => ['required', 'string', 'max:50', Rule::unique('phone_storages')->ignore($storage->id)],
+            'capacity' => ['required', 'string', 'max:50', Rule::unique('phone_storages')->ignore($phoneStorage->id)],
             'is_active' => 'boolean',
         ]);
 
-        $storage->update($validated);
+        $phoneStorage->update($validated);
 
         return redirect()->route('admin.storages.index')
             ->with('success', 'Storage option updated successfully.');
     }
 
-    public function destroy(PhoneStorage $storage)
+    public function destroy(PhoneStorage $phoneStorage)
     {
-        if ($storage->productStorages()->exists()) {
-    return back()->with('error', 'Cannot delete storage option assigned to products.');
-}
+        if ($phoneStorage->productStorages()->exists()) {
+            return back()->with('error', 'Cannot delete storage option assigned to products.');
+        }
 
-        $storage->delete();
+        $phoneStorage->delete();
 
         return redirect()->route('admin.storages.index')
             ->with('success', 'Storage option deleted successfully.');
     }
 
-    public function toggleStatus(PhoneStorage $storage)
+    public function toggleStatus(PhoneStorage $phoneStorage)
     {
-        $storage->update(['is_active' => ! $storage->is_active]);
+        $phoneStorage->update(['is_active' => ! $phoneStorage->is_active]);
 
         return back()->with('success', 'Storage status updated.');
     }

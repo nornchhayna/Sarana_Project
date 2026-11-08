@@ -6,7 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Color;
+use App\Models\Gift;
 use App\Models\PhoneModel;
+use App\Models\PhoneRam;
 use App\Models\PhoneStorage;
 use App\Models\Product;
 use App\Models\Stock;
@@ -55,11 +57,13 @@ class WebmasterProductController extends Controller
         $brands = Brand::where('is_active', true)->get();
         $phoneModels = PhoneModel::where('is_active', true)->with('brand')->get();
         $colors = Color::where('is_active', true)->get();
+        $gifts = Gift::where('is_active', true)->get();
         $storages = PhoneStorage::where('is_active', true)->get();
+        $rams = PhoneRam::where('is_active', true)->get();
         $product = new Product;
 
         return view('webmaster.products.create', compact(
-            'categories', 'brands', 'phoneModels', 'colors', 'storages', 'product'
+            'categories', 'brands', 'phoneModels', 'colors', 'gifts', 'storages', 'rams', 'product'
         ));
     }
 
@@ -75,6 +79,7 @@ class WebmasterProductController extends Controller
             'specifications' => 'nullable|string',
             'details' => 'nullable|array',
             'base_price' => 'required|numeric|min:0',
+            'stock' => 'nullable|integer|min:0',
             'sale_price' => 'nullable|numeric|min:0',
             'discount' => 'nullable|numeric|min:0|max:100',
             'is_active' => 'boolean',
@@ -176,8 +181,9 @@ class WebmasterProductController extends Controller
             $colorIds = collect($validated['colors'] ?? [])->map(fn ($c) => is_array($c) ? $c['id'] : $c)->toArray();
             $storageIds = collect($validated['storages'] ?? [])->map(fn ($s) => is_array($s) ? $s['id'] : $s)->toArray();
 
+            $initialStock = (int) ($validated['stock'] ?? $request->input('stock', 0));
             if (empty($colorIds) && empty($storageIds)) {
-                Stock::create(['product_id' => $product->id, 'quantity' => 0]);
+                Stock::create(['product_id' => $product->id, 'quantity' => $initialStock]);
             } else {
                 foreach ($colorIds ?: [null] as $cid) {
                     foreach ($storageIds ?: [null] as $sid) {
@@ -209,16 +215,18 @@ class WebmasterProductController extends Controller
 
     public function edit(Product $product)
     {
-        $product->load(['productColors', 'productStorages', 'stock']);
+        $product->load(['productColors', 'productStorages', 'stock', 'gifts', 'rams', 'variants', 'variantImages']);
         $categories = Category::where('is_active', true)->get();
         $brands = Brand::where('is_active', true)->get();
         $phoneModels = PhoneModel::where('is_active', true)->with('brand')->get();
         $colors = Color::where('is_active', true)->get();
+        $gifts = Gift::where('is_active', true)->get();
         $storages = PhoneStorage::where('is_active', true)->get();
+        $rams = PhoneRam::where('is_active', true)->get();
         $statusOptions = ['active', 'inactive', 'draft'];
 
         return view('webmaster.products.edit', compact(
-            'product', 'categories', 'brands', 'phoneModels', 'colors', 'storages', 'statusOptions'
+            'product', 'categories', 'brands', 'phoneModels', 'gifts', 'colors', 'storages', 'rams', 'statusOptions'
         ));
     }
 
@@ -246,6 +254,7 @@ class WebmasterProductController extends Controller
             'specifications' => 'nullable|string',
             'details' => 'nullable|array',
             'base_price' => 'required|numeric|min:0',
+            'stock' => 'nullable|integer|min:0',
             'sale_price' => 'nullable|numeric|min:0',
             'discount' => 'nullable|numeric|min:0|max:100',
             'is_active' => 'boolean',
@@ -357,7 +366,10 @@ class WebmasterProductController extends Controller
 
             // 7. Update Stock Combinations safely (Adds new combinations without deleting existing quantities)
             if (empty($colorIds) && empty($storageIds)) {
-                Stock::firstOrCreate(['product_id' => $product->id, 'color_id' => null, 'phone_storage_id' => null], ['quantity' => 0]);
+                $baseStock = Stock::firstOrCreate(['product_id' => $product->id, 'color_id' => null, 'phone_storage_id' => null], ['quantity' => 0]);
+                if ($request->has('stock')) {
+                    $baseStock->update(['quantity' => (int) $request->input('stock', 0)]);
+                }
             } else {
                 foreach ($colorIds ?: [null] as $cid) {
                     foreach ($storageIds ?: [null] as $sid) {

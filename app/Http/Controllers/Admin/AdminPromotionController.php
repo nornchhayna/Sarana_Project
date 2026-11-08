@@ -99,6 +99,11 @@ class AdminPromotionController extends Controller
             ->with('success', 'Promotion deleted successfully.');
     }
 
+    public function toggle(Promotion $promotion)
+    {
+        return $this->toggleStatus($promotion);
+    }
+
     public function toggleStatus(Promotion $promotion)
     {
         $promotion->update(['is_active' => ! $promotion->is_active]);

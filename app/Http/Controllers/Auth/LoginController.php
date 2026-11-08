@@ -59,28 +59,35 @@ class LoginController extends Controller
         ]);
 
         if (Auth::guard('admin')->attempt($credentials, $request->boolean('remember'))) {
-            Log::info('Auth successful', ['email' => Auth::guard('admin')->user()->email, 'role' => Auth::guard('admin')->user()->role]);
+            $user = Auth::guard('admin')->user();
+            Log::info('Auth successful', ['email' => $user->email, 'role' => $user->role]);
 
             // Block deactivated accounts
-            if (! Auth::guard('admin')->user()->is_active) {
+            if (! $user->is_active) {
                 Auth::guard('admin')->logout();
+                Auth::guard('web')->logout();
                 throw ValidationException::withMessages([
                     'email' => 'Your account has been deactivated. Please contact support.',
                 ]);
             }
 
             // Only allow admin role
-            if (Auth::guard('admin')->user()->role !== User::ROLE_ADMIN) {
-                Log::info('Role check failed', ['role' => Auth::guard('admin')->user()->role]);
+            if ($user->role !== User::ROLE_ADMIN) {
+                Log::info('Role check failed', ['role' => $user->role]);
                 Auth::guard('admin')->logout();
+                Auth::guard('web')->logout();
                 throw ValidationException::withMessages([
                     'email' => 'Access denied. Admin login is for administrators only.',
                 ]);
             }
 
+            // Sync with web guard so default auth()->user() and Blade views work properly
+            Auth::guard('web')->login($user, $request->boolean('remember'));
+            Auth::shouldUse('admin');
+
             $request->session()->regenerate();
 
-            return $this->redirectByRole(Auth::guard('admin')->user());
+            return redirect()->route('admin.dashboard');
         }
 
         Log::info('Auth failed', ['email' => $request->email]);
@@ -104,28 +111,35 @@ class LoginController extends Controller
         ]);
 
         if (Auth::guard('webmaster')->attempt($credentials, $request->boolean('remember'))) {
-            Log::info('Auth successful', ['email' => Auth::guard('webmaster')->user()->email, 'role' => Auth::guard('webmaster')->user()->role]);
+            $user = Auth::guard('webmaster')->user();
+            Log::info('Auth successful', ['email' => $user->email, 'role' => $user->role]);
 
             // Block deactivated accounts
-            if (! Auth::guard('webmaster')->user()->is_active) {
+            if (! $user->is_active) {
                 Auth::guard('webmaster')->logout();
+                Auth::guard('web')->logout();
                 throw ValidationException::withMessages([
                     'email' => 'Your account has been deactivated. Please contact support.',
                 ]);
             }
 
             // Only allow webmaster role
-            if (Auth::guard('webmaster')->user()->role !== User::ROLE_WEBMASTER) {
-                Log::info('Role check failed', ['role' => Auth::guard('webmaster')->user()->role]);
+            if ($user->role !== User::ROLE_WEBMASTER) {
+                Log::info('Role check failed', ['role' => $user->role]);
                 Auth::guard('webmaster')->logout();
+                Auth::guard('web')->logout();
                 throw ValidationException::withMessages([
                     'email' => 'Access denied. Webmaster login is for webmasters only.',
                 ]);
             }
 
+            // Sync with web guard
+            Auth::guard('web')->login($user, $request->boolean('remember'));
+            Auth::shouldUse('webmaster');
+
             $request->session()->regenerate();
 
-            return $this->redirectByRole(Auth::guard('webmaster')->user());
+            return redirect()->route('webmaster.dashboard');
         }
 
         Log::info('Auth failed', ['email' => $request->email]);
@@ -136,6 +150,8 @@ class LoginController extends Controller
 
  public function logout(Request $request): RedirectResponse
 {
+    $user = Auth::guard('admin')->user() ?? Auth::guard('webmaster')->user() ?? Auth::guard('web')->user();
+
     Auth::guard('web')->logout();
     Auth::guard('customer')->logout();
     Auth::guard('admin')->logout();
@@ -144,17 +160,13 @@ class LoginController extends Controller
     $request->session()->invalidate();
     $request->session()->regenerateToken();
 
+    // Redirect to the appropriate login page based on user role
+    if ($user && $user->role === 'admin') {
+        return redirect()->route('admin.login')->with('success', 'You have been logged out.');
+    } elseif ($user && $user->role === 'webmaster') {
+        return redirect()->route('webmaster.login')->with('success', 'You have been logged out.');
+    }
+
     return redirect()->route('auth.login')->with('success', 'You have been logged out.');
 }
-
-    public function redirectByRole(User $user): RedirectResponse
-    {
-        Log::info('Redirecting user', ['email' => $user->email, 'role' => $user->role]);
-
-        return match ($user->role) {
-            User::ROLE_ADMIN => redirect()->route('admin.dashboard'),
-            User::ROLE_WEBMASTER => redirect()->route('webmaster.dashboard'),
-            default => redirect()->route('customer.dashboard'),
-        };
-    }
 }

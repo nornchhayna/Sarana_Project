@@ -10,6 +10,7 @@
     --success: #1F9D63;
     --danger: #E5484D;
     --radius-lg: 12px;
+    --accent: #f0603f;
 }
 
 /* ── DASHBOARD: STAT CARDS ── */
@@ -34,6 +35,32 @@
 .card-title { font-family: var(--font-display); font-size: 14px; font-weight: 700; color: var(--text-1); margin: 0; }
 .card-sub { font-size: 11px; color: var(--text-3); margin-top: 2px; }
 .card-footer { padding: 16px 22px; border-top: 1px solid var(--border); }
+
+/* ── CHART STYLES ── */
+.chart-area { padding: 20px 22px; }
+.chart-bars { display: flex; align-items: flex-end; gap: 8px; height: 180px; margin-bottom: 8px; }
+.bar-group { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0; }
+.bar { width: 100%; border-radius: 4px 4px 0 0; transition: height 0.3s ease; min-height: 4px; }
+.bar.revenue { background: var(--accent); opacity: 0.9; }
+.bar.orders { background: rgba(91, 110, 245, 0.3); border-radius: 4px; }
+.bar-label { font-size: 10px; color: var(--text-3); font-weight: 500; text-align: center; white-space: nowrap; }
+.chart-legend { display: flex; gap: 16px; justify-content: center; padding-top: 8px; border-top: 1px solid var(--border); }
+.legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-2); }
+.legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+/* ── DASHBOARD: BOTTOM ROW (products + activity) ── */
+.bottom-row { display: grid; grid-template-columns: 1fr 320px; gap: 16px; }
+
+/* Product table styles */
+.prod-name { display: flex; align-items: center; gap: 10px; }
+.prod-icon { width: 32px; height: 32px; border-radius: 6px; background: var(--input-bg); display: grid; place-items: center; color: var(--text-3); font-size: 14px; flex-shrink: 0; }
+.stock-bar-wrap { display: flex; align-items: center; gap: 8px; }
+.stock-bar { flex: 1; height: 6px; background: var(--input-bg); border-radius: 3px; overflow: hidden; }
+.stock-fill { height: 100%; border-radius: 3px; transition: width 0.3s ease; }
+.fill-good { background: var(--success); }
+.fill-mid { background: var(--orange); }
+.fill-low { background: var(--danger); }
+.stock-num { font-size: 11px; font-weight: 600; color: var(--text-1); font-family: var(--font-mono); width: 28px; text-align: right; }
 
 /* Top products list */
 .orders-list { padding: 8px 0; }

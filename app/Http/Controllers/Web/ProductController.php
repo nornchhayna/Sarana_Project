@@ -18,6 +18,7 @@ class ProductController extends Controller
             $query = Product::with(['brand', 'phoneModel', 'category', 'colors', 'storages', 'stock'])
                 ->withCount(['reviews' => fn ($q) => $q->where('is_approved', true)])
                 ->withAvg(['reviews as avg_rating' => fn ($q) => $q->where('is_approved', true)], 'rating')
+                ->withSoldCount()
                 ->where('is_active', true)
                 ->where('status', 'active');
 
@@ -81,7 +82,7 @@ class ProductController extends Controller
                 'price_asc' => $query->orderBy('base_price'),
                 'price_desc' => $query->orderByDesc('base_price'),
                 'newest' => $query->latest(),
-                'best_seller' => $query->orderByDesc('total_sold'),
+                'best_seller' => $query->orderByDesc('actual_sold'),
                 'rating' => $query->orderByDesc('avg_rating'),
                 default => $query->orderBy('sort_order')->orderByDesc('is_featured'),
             };
@@ -124,6 +125,7 @@ class ProductController extends Controller
             $featuredProducts = Product::with(['brand', 'stock'])
                 ->withCount(['reviews' => fn ($q) => $q->where('is_approved', true)])
                 ->withAvg(['reviews as avg_rating' => fn ($q) => $q->where('is_approved', true)], 'rating')
+                ->withSoldCount()
                 ->where('is_active', true)
                 ->where('status', 'active')
                 ->where('is_featured', true)
@@ -151,10 +153,17 @@ class ProductController extends Controller
             'category',
             'colors',
             'storages',
-            'stock',
+            'rams',
+            'stock.color',
+            'stock.phoneStorage',
+            'variants.color',
+            'variants.storage',
+            'variants.ram',
+            'variantImages',
+            'gifts',
             'reviews' => fn ($q) => $q->where('is_approved', true)->with('user')->latest()->take(10),
         ])
-        
+        ->withSoldCount()
             ->where('slug', $slug)
             ->where('is_active', true)
             ->firstOrFail();
@@ -162,7 +171,8 @@ class ProductController extends Controller
         // Related products — same category, exclude current
         $related = Product::with(['brand', 'stock'])
          ->withCount(['reviews' => fn ($q) => $q->where('is_approved', true)])
-    ->withAvg(['reviews as avg_rating' => fn ($q) => $q->where('is_approved', true)], 'rating') 
+    ->withAvg(['reviews as avg_rating' => fn ($q) => $q->where('is_approved', true)], 'rating')
+    ->withSoldCount()
             ->where('is_active', true)
             ->where('category_id', $product->category_id)
             ->where('id', '!=', $product->id)

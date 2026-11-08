@@ -10,7 +10,6 @@ class StorageSeeder extends Seeder
     public function run(): void
     {
         $storages = [
-            '32GB',
             '64GB',
             '128GB',
             '256GB',
@@ -19,11 +18,12 @@ class StorageSeeder extends Seeder
         ];
 
         foreach ($storages as $storage) {
-            PhoneStorage::updateOrCreate(
+            PhoneStorage::withTrashed()->updateOrCreate(
                 ['capacity' => $storage],
                 [
                     'capacity' => $storage,
                     'is_active' => true,
+                    'deleted_at' => null,
                 ]
             );
         }

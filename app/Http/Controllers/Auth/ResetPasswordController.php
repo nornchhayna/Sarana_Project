@@ -12,8 +12,22 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\Rules;
 use Illuminate\View\View;
 
-class ResetPasswordController extends Controller
+class PasswordResetController extends Controller
 {
+    public function showVerifyOtpForm()
+    {
+        $email = session('password_reset_email');
+
+        if (!$email) {
+            return redirect()
+                ->route('auth.password.request')
+                ->with('error', 'Please request a password reset code first.');
+        }
+
+        return view('auth.passwords.verify-otp', [
+            'email' => $email,
+        ]);
+    }
     public function showResetForm(Request $request, string $token): View
     {
         return view('auth.reset-password', [
@@ -27,11 +41,20 @@ class ResetPasswordController extends Controller
         $request->validate([
             'token' => ['required'],
             'email' => ['required', 'email'],
-            'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'password' => [
+                'required',
+                'confirmed',
+                Rules\Password::defaults(),
+            ],
         ]);
 
         $status = Password::reset(
-            $request->only('email', 'password', 'password_confirmation', 'token'),
+            $request->only(
+                'email',
+                'password',
+                'password_confirmation',
+                'token'
+            ),
             function ($user) use ($request) {
                 $user->forceFill([
                     'password' => Hash::make($request->password),
@@ -44,7 +67,8 @@ class ResetPasswordController extends Controller
 
         return $status === Password::PASSWORD_RESET
             ? redirect()->route('login')->with('status', __($status))
-            : back()->withInput($request->only('email'))
+            : back()
+                ->withInput($request->only('email'))
                 ->withErrors(['email' => __($status)]);
     }
 }

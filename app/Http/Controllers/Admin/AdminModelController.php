@@ -84,21 +84,21 @@ class AdminModelController extends Controller
             ->with('success', 'Phone model updated successfully.');
     }
 
-    public function destroy(PhoneModel $model)
+    public function destroy(PhoneModel $phoneModel)
     {
-        if ($model->products()->exists()) {
+        if ($phoneModel->products()->exists()) {
             return back()->with('error', 'Cannot delete model with existing products.');
         }
 
-        $model->delete();
+        $phoneModel->delete();
 
         return redirect()->route('admin.models.index')
             ->with('success', 'Phone model deleted successfully.');
     }
 
-    public function toggleStatus(PhoneModel $model)
+    public function toggleStatus(PhoneModel $phoneModel)
     {
-        $model->update(['is_active' => ! $model->is_active]);
+        $phoneModel->update(['is_active' => ! $phoneModel->is_active]);
 
         return back()->with('success', 'Phone model status updated.');
     }

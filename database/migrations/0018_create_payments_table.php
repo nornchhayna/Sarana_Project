@@ -12,9 +12,9 @@ return new class extends Migration
             $table->id();
             $table->foreignId('order_id')->constrained()->cascadeOnDelete();
             $table->string('transaction_id')->nullable()->unique();
-            $table->enum('method', ['cash', 'bank_transfer', 'aba', 'wing', 'acleda', 'other'])
+            $table->enum('method', ['cash', 'bank_transfer', 'aba', 'wing', 'acleda', 'khqr', 'other'])
                 ->default('cash');
-            $table->enum('status', ['pending', 'paid', 'failed', 'refunded'])->default('pending');
+            $table->enum('status', ['pending', 'completed', 'paid', 'failed', 'refunded'])->default('pending');
             $table->decimal('amount', 12, 2);
             $table->string('currency', 3)->default('USD');
             $table->string('proof_image')->nullable(); // for bank transfers

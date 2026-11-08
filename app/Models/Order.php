@@ -48,14 +48,15 @@ class Order extends Model
         return $this->belongsTo(Promotion::class);
     }
 
-    // public function items(): HasMany
-    // {
-    //     return $this->hasMany(OrderItem::class);
-    // }
-    public function items()
-{
-    return $this->hasMany(OrderItem::class, 'order_id'); // or whatever it actually is, e.g. 'orderId'
-}
+    public function items(): HasMany
+    {
+        return $this->hasMany(OrderItem::class, 'order_id');
+    }
+
+    public function orderItems(): HasMany
+    {
+        return $this->hasMany(OrderItem::class, 'order_id');
+    }
 
     public function payments(): HasMany
     {
@@ -81,7 +82,7 @@ class Order extends Model
 
     public function getIsPaidAttribute(): bool
     {
-        return $this->payments()->where('status', 'paid')->exists()
+        return $this->payments()->whereIn('status', ['paid', 'completed'])->exists()
             || in_array($this->status, ['confirmed', 'processing', 'shipped', 'delivered'], true);
     }
 

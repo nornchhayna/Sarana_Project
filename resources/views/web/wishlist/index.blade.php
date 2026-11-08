@@ -267,8 +267,8 @@
                         <span>({{ $relatedProduct->reviews_count ?? rand(10,50) }})</span>
                     </div>
 
-                    <div class="ecom-deal-desc" title="{{ strip_tags($relatedProduct->description) }}">
-                        {{ strip_tags($relatedProduct->description) ?? 'No description available for this product.' }}
+                    <div class="ecom-deal-desc" title="{{ strip_tags($relatedProduct->description ?? '') }}">
+                        {{ strip_tags($relatedProduct->description ?? '') ?: 'No description available for this product.' }}
                     </div>
 
                     <div class="ecom-deal-price">

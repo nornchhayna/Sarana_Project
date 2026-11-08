@@ -107,6 +107,7 @@
             @endif
         </div>
 
+        {{-- Right Column --}}
         <div class="col-lg-4 d-flex flex-column gap-4">
 
             {{-- Status card --}}
@@ -170,6 +171,43 @@
                 </div>
             </div>
 
+            {{-- Stock --}}
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <h5 class="card-title fs-6 fw-bold border-bottom pb-3 mb-4">Stock</h5>
+                    
+                    @if($product->variants->isEmpty())
+                        <div class="text-muted small">No variants found for this product.</div>
+                    @else
+                        <div class="mb-3">
+                            <label class="small text-muted fw-medium mb-2 d-block">Filter by Variant</label>
+                            <select id="variant-filter" class="form-select form-select-sm">
+                                <option value="">All Variants</option>
+                                @foreach($product->variants as $variant)
+                                    @php
+                                        $colorName = $variant->color ? $variant->color->name : 'No Color';
+                                        $storageLabel = $variant->phoneStorage ? ($variant->phoneStorage->label ?? $variant->phoneStorage->capacity) : ($variant->phone_storage_id ? 'Storage #' . $variant->phone_storage_id : 'No Storage');
+                                        $ramLabel = $variant->phoneRam ? ($variant->phoneRam->label ?? $variant->phoneRam->capacity) : ($variant->phone_ram_id ? 'RAM #' . $variant->phone_ram_id : 'No RAM');
+                                        $variantLabel = $colorName . ' / ' . $storageLabel . ' / ' . $ramLabel;
+                                        $variantStock = $variant->stock ?? 0;
+                                    @endphp
+                                    <option value="{{ $variant->id }}" data-stock="{{ $variantStock }}">
+                                        {{ $variantLabel }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="d-flex justify-content-between small">
+                            <span class="text-muted fw-medium">Available Stock</span>
+                            <span class="fw-bold" id="stock-display">
+                                {{ $product->variants->sum('stock') ?? 0 }}
+                            </span>
+                        </div>
+                    @endif
+                </div>
+            </div>
+
             {{-- Stats --}}
             <div class="card border-0 shadow-sm">
                 <div class="card-body p-4">
@@ -199,4 +237,30 @@
         </div>
     </div>
 </div>
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const variantFilter = document.getElementById('variant-filter');
+        const stockDisplay = document.getElementById('stock-display');
+        
+        if (variantFilter && stockDisplay) {
+            // Store the total stock for when "All Variants" is selected
+            const totalStock = stockDisplay.textContent.trim();
+            
+            variantFilter.addEventListener('change', function() {
+                const selectedOption = this.options[this.selectedIndex];
+                
+                if (this.value === '') {
+                    // Show total stock when "All Variants" is selected
+                    stockDisplay.textContent = totalStock;
+                } else {
+                    // Show individual variant stock
+                    stockDisplay.textContent = selectedOption.dataset.stock || 0;
+                }
+            });
+        }
+    });
+</script>
+@endpush
 @endsection

@@ -7,16 +7,17 @@ use App\Http\Controllers\Api\BrandApiController;
 use App\Http\Controllers\Api\CartApiController;
 use App\Http\Controllers\Api\CategoryApiController;
 use App\Http\Controllers\Api\ContactApiController;
+use App\Http\Controllers\Api\HomeApiController;
 use App\Http\Controllers\Api\InvoiceApiController;
 use App\Http\Controllers\Api\NotificationApiController;
 use App\Http\Controllers\Api\OrderApiController;
 use App\Http\Controllers\Api\PaymentApiController;
 use App\Http\Controllers\Api\ProductApiController;
+use App\Http\Controllers\Api\ProductVariantController;
 use App\Http\Controllers\Api\PromotionApiController;
 use App\Http\Controllers\Api\ReviewApiController;
 use App\Http\Controllers\Api\SliderApiController;
 use App\Http\Controllers\Api\WishlistApiController;
-use App\Http\Controllers\API\ProductVariantController;
 use Illuminate\Support\Facades\Route;
 
 // ─────────────────────────────────────────────
@@ -25,13 +26,18 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->name('api.v1.')->group(function () {
 
+    // Home aggregated payload
+    Route::get('/home', [HomeApiController::class, 'index'])->name('home');
+
     // Auth
     Route::prefix('auth')->name('auth.')->group(function () {
         Route::post('/register', [ApiRegisterController::class, 'register'])->name('register');
         Route::post('/login', [ApiLoginController::class, 'login'])->name('login');
         Route::post('/forgot-password', [ApiLoginController::class, 'forgotPassword'])->name('forgot-password');
         Route::post('/reset-password', [ApiLoginController::class, 'resetPassword'])->name('reset-password');
+        Route::post('/google', [ApiLoginController::class, 'googleLogin'])->name('google');
     });
+
 
     // Catalogue (publicly browsable)
     Route::get('/sliders', [SliderApiController::class, 'index'])->name('sliders.index');
@@ -51,6 +57,11 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
     // Product Variants
     Route::get('/product-variant', [ProductVariantController::class, 'show'])->name('product-variant.show');
     Route::get('/product-variants', [ProductVariantController::class, 'index'])->name('product-variants.index');
+
+    // Blogs & Newsletter
+    Route::get('/blogs', [HomeApiController::class, 'blogs'])->name('blogs.index');
+    Route::get('/blogs/{slug}', [HomeApiController::class, 'blogDetail'])->name('blogs.show');
+    Route::post('/newsletter/subscribe', [HomeApiController::class, 'subscribeNewsletter'])->name('newsletter.subscribe');
 
     // ─────────────────────────────────────────────
     //  Authenticated API routes
@@ -78,15 +89,19 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         Route::prefix('cart')->name('cart.')->group(function () {
             Route::get('/', [CartApiController::class, 'index'])->name('index');
             Route::post('/add', [CartApiController::class, 'add'])->name('add');
+            Route::post('/buy-now', [CartApiController::class, 'buyNow'])->name('buy-now');
             Route::patch('/items/{cartItem}', [CartApiController::class, 'update'])->name('update');
             Route::delete('/items/{cartItem}', [CartApiController::class, 'remove'])->name('remove');
             Route::delete('/clear', [CartApiController::class, 'clear'])->name('clear');
             Route::post('/sync', [CartApiController::class, 'sync'])->name('sync');  // merge guest cart on login
+            Route::post('/promotion', [CartApiController::class, 'applyPromotion'])->name('promotion.apply');
+            Route::delete('/promotion', [CartApiController::class, 'removePromotion'])->name('promotion.remove');
         });
 
         // Wishlist
         Route::prefix('wishlist')->name('wishlist.')->group(function () {
             Route::get('/', [WishlistApiController::class, 'index'])->name('index');
+            Route::post('/toggle', [WishlistApiController::class, 'toggleBody'])->name('toggle.body');
             Route::post('/{product}', [WishlistApiController::class, 'toggle'])->name('toggle');
             Route::delete('/{product}', [WishlistApiController::class, 'remove'])->name('remove');
         });
@@ -97,6 +112,9 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
             Route::post('/', [OrderApiController::class, 'store'])->name('store');
             Route::get('/{order}', [OrderApiController::class, 'show'])->name('show');
             Route::patch('/{order}/cancel', [OrderApiController::class, 'cancel'])->name('cancel');
+            Route::put('/{order}/status', [OrderApiController::class, 'updateStatus'])->name('status');
+            Route::get('/{order}/khqr', [OrderApiController::class, 'showKHQR'])->name('khqr');
+            Route::post('/{order}/khqr/verify', [OrderApiController::class, 'verifyKHQR'])->name('khqr.verify');
         });
 
         // Payments
@@ -104,6 +122,8 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
             Route::post('/initiate', [PaymentApiController::class, 'initiate'])->name('initiate');
             Route::post('/callback', [PaymentApiController::class, 'callback'])->name('callback');
             Route::get('/verify/{payment}', [PaymentApiController::class, 'verify'])->name('verify');
+            Route::post('/cambodia', [PaymentApiController::class, 'initiateCambodia'])->name('cambodia.initiate');
+            Route::get('/cambodia/status/{reference}', [PaymentApiController::class, 'checkCambodiaStatus'])->name('cambodia.status');
         });
 
         // Invoices
@@ -129,7 +149,9 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
             Route::delete('/{notification}', [NotificationApiController::class, 'destroy'])->name('destroy');
         });
 
-        // Contact (authenticated — prefills user data)
+        // Contact / Customer Support Enquiries
+        Route::get('/contact', [ContactApiController::class, 'index'])->name('contact.index');
+        Route::get('/contact/{contact}', [ContactApiController::class, 'show'])->name('contact.show');
         Route::post('/contact', [ContactApiController::class, 'store'])->name('contact.store');
     });
 });
